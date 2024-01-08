@@ -9,7 +9,7 @@ from xml_utils import load_xml_from_buffer, load_xml, find_child_elements_by_mat
 
 """
 Potential issues:
-Some file elements do not contain destinationPath, usually .NET stuff
+Some file elements do not contain destinationPath, usually .NET stuff 
 """
 
 
