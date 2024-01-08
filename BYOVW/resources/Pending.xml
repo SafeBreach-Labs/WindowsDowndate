@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PendingTransaction Version="3.1" WcpVersion="10.0.22621.2567 (WinBuild.160101.0800)" Identifier="916ae75edb30da0146730000dc1be027">
+	<Transactions>
+	</Transactions>
+	<ChangeList>
+	</ChangeList>
+	<POQ postAction="reboot">
+	</POQ>
+	<POQ>
+    </POQ>
+	<InstallerQueue Length="0x00000000">
+	</InstallerQueue>
+	<RollbackInformation>
+		<AdminHints>
+		</AdminHints>
+	</RollbackInformation>
+</PendingTransaction>
