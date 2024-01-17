@@ -1,7 +1,6 @@
 import ctypes
 from ctypes import wintypes
 from typing import Callable, Tuple, Any
-from abc import ABCMeta
 
 ##############
 # Structures #
@@ -12,12 +11,7 @@ DELTA_FLAG_NONE = ctypes.c_int64(0)
 P_BUFFER = ctypes.POINTER(ctypes.c_char)
 
 
-class DeltaStructure(ctypes.Structure):
-    def get_buffer(self) -> bytes:
-        return bytes(self.lpStart[:self.uSize])
-
-
-class DELTA_INPUT(DeltaStructure):
+class DELTA_INPUT(ctypes.Structure):
     _fields_ = [
         ("lpStart", P_BUFFER),
         ("uSize", ctypes.c_size_t),
@@ -25,11 +19,14 @@ class DELTA_INPUT(DeltaStructure):
     ]
 
 
-class DELTA_OUTPUT(DeltaStructure):
+class DELTA_OUTPUT(ctypes.Structure):
     _fields_ = [
         ("lpStart", P_BUFFER),
         ("uSize", ctypes.c_size_t)
     ]
+
+    def get_buffer(self) -> bytes:
+        return bytes(self.lpStart[:self.uSize])
 
     def __del__(self) -> None:
         if self.lpStart:

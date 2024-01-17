@@ -1,25 +1,50 @@
 import filecmp
-import hashlib
 import os
 from typing import Union, List
 
 
-def list_files_by_extensions(dir_path: str, extensions: Union[List[str], str]) -> List[str]:
+def list_dirs(dir_path: str, return_name_only: bool = False) -> List[str]:
+    dirs = []
+    dir_path_exp = os.path.expandvars(dir_path)
+    for dir_entry in os.scandir(dir_path_exp):
+        if dir_entry.is_dir():
+            dirs.append(dir_entry.name if return_name_only else dir_entry.path)
+
+    if not dirs:
+        raise Exception(f"Did not find directories in directory: {dir_path_exp}")
+
+    return dirs
+
+
+def list_files(dir_path: str, return_name_only: bool = False) -> List[str]:
+    files = []
+    dir_path_exp = os.path.expandvars(dir_path)
+    for dir_entry in os.scandir(dir_path_exp):
+        if dir_entry.is_file():
+            files.append(dir_entry.name if return_name_only else dir_entry.path)
+
+    if not files:
+        raise Exception(f"Did not find files in directory: {dir_path_exp}")
+
+    return files
+
+
+def is_file_suits_extensions(file: str, extensions: Union[List[str], str]) -> bool:
     if isinstance(extensions, str):
         extensions = [extensions]
 
-    dir_path_exp = os.path.expandvars(dir_path)
-    dir_entries = os.scandir(dir_path_exp)
+    file_name, file_extension = os.path.splitext(file)
+    return file_extension in extensions
+
+    
+def list_files_by_extensions(dir_path: str, extensions: Union[List[str], str]) -> List[str]:
     files = []
-    for dir_entry in dir_entries:
-        if dir_entry.is_file():
-            full_file_name = dir_entry.name
-            file_name, file_extension = os.path.splitext(full_file_name)
-            if file_extension in extensions:
-                files.append(full_file_name)
+    for file in list_files(dir_path, return_name_only=True):
+        if is_file_suits_extensions(file, extensions):
+            files.append(file)
 
     if not files:
-        raise Exception(f"Did not find files with extensions {extensions} in directory: {dir_path_exp}")
+        raise Exception(f"Did not find files with extensions {extensions} in directory: {dir_path}")
 
     return files
 
@@ -37,7 +62,7 @@ def write_file(file_path: str, content: Union[str, bytes], mode: str = "wb"):
         f.write(content)
 
 
-def path_exists(file_path: str) -> bool:
+def is_path_exists(file_path: str) -> bool:
     file_path_exp = os.path.expandvars(file_path)
     return os.path.exists(file_path_exp)
 
