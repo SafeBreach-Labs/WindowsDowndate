@@ -2,7 +2,8 @@ from component_store import create_base_update_files
 
 """
 Potential issues:
-Some file elements do not contain destinationPath, usually .NET stuff 
+Some file elements do not contain destinationPath, usually .NET stuff
+What about PA19 deltas? Would the MsDelta API handle it correctly? 
 """
 
 

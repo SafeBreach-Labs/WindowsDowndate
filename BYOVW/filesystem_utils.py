@@ -3,15 +3,29 @@ import os
 from typing import Union, List
 
 
-def list_dirs(dir_path: str, return_name_only: bool = False) -> List[str]:
+class DirectoryNotFound(Exception):
+    pass
+
+
+class FileNotFound(Exception):
+    pass
+
+
+def list_dirs(dir_path: str, return_name_only: bool = False, oldest_to_newest: bool = False) -> List[str]:
     dirs = []
     dir_path_exp = os.path.expandvars(dir_path)
     for dir_entry in os.scandir(dir_path_exp):
         if dir_entry.is_dir():
-            dirs.append(dir_entry.name if return_name_only else dir_entry.path)
+            dirs.append(dir_entry.path)
 
     if not dirs:
-        raise Exception(f"Did not find directories in directory: {dir_path_exp}")
+        raise DirectoryNotFound(f"Did not find directories in directory: {dir_path_exp}")
+
+    if oldest_to_newest:
+        dirs.sort(key=os.path.getmtime)
+
+    if return_name_only:
+        dirs = [os.path.basename(dir) for dir in dirs]
 
     return dirs
 
@@ -24,7 +38,7 @@ def list_files(dir_path: str, return_name_only: bool = False) -> List[str]:
             files.append(dir_entry.name if return_name_only else dir_entry.path)
 
     if not files:
-        raise Exception(f"Did not find files in directory: {dir_path_exp}")
+        raise FileNotFound(f"Did not find files in directory: {dir_path_exp}")
 
     return files
 

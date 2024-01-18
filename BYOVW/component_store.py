@@ -3,16 +3,16 @@ import re
 import xml.etree.ElementTree as ET
 from typing import List
 
-from filesystem_utils import list_files_by_extensions, read_file, list_dirs
+from filesystem_utils import list_files_by_extensions, read_file, list_dirs, DirectoryNotFound
 from ms_delta import apply_delta
-from ms_delta_definitions import DELTA_OUTPUT, DELTA_FLAG_NONE
+from ms_delta_definitions import DELTA_FLAG_NONE
 from xml_utils import load_xml_from_buffer
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
 COMPONENT_STORE_WINNERS_REGISTRY_PATH = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SideBySide\\Winners"
 
-SIDE_BY_SIDE_DIRECTORY_PREFIXES = ["amd64", "msil", "wow64", "x86"]
+COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
 
 PACKAGE_VARIABLES = {
     "runtime.programfilesx86": "%ProgramFiles(x86)%",
@@ -40,10 +40,11 @@ PACKAGE_VARIABLES = {
 class Manifest:
 
     BASE_MANIFEST = read_file("BYOVW\\resources\\WcpBaseManifest.xml")
+    DCM_HEADER = b"DCM\x01"
 
     def __init__(self, manifest_name: str) -> None:
         self._manifest_name = manifest_name
-        self._manifest_file_name = f"{manifest_name}.manifest"
+        self._manifest_path = f"{COMPONENT_STORE_MANIFESTS_PATH}\\{manifest_name}.manifest"
         self._manifest_buffer = None
         self._manifest_xml = None
 
@@ -55,25 +56,27 @@ class Manifest:
 
     def get_manifest_buffer(self) -> bytes:
         if not self._manifest_buffer:
-            manifest_delta_output_obj = Manifest.decompress_manifest(self._manifest_file_name)
-            self._manifest_buffer = manifest_delta_output_obj.get_buffer()
+            self._manifest_buffer = read_file(self._manifest_path)
+            if self._manifest_buffer.startswith(Manifest.DCM_HEADER):
+                self._manifest_buffer = self.decompress_manifest(self._manifest_buffer)
         return self._manifest_buffer
 
     def get_manifest_files(self) -> List[str]:
         pass
 
     @staticmethod
-    def decompress_manifest(manifest_file_name: str) -> DELTA_OUTPUT:
-        manifest_contents = read_file(f"{COMPONENT_STORE_MANIFESTS_PATH}\\{manifest_file_name}")[4:] # Remove DCM header
-        return apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_contents)
+    def decompress_manifest(manifest_buffer: bytes) -> bytes:
+        manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
+        manifest_delta_output_obj = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
+        return manifest_delta_output_obj.get_buffer()
 
 
 def get_all_manifest_names() -> List[str]:
     return list_files_by_extensions(COMPONENT_STORE_MANIFESTS_PATH, ".manifest")
 
 
-def is_side_by_side_dir(dir_name: str, case_sensitive: bool = False) -> bool:
-    for prefix in SIDE_BY_SIDE_DIRECTORY_PREFIXES:
+def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
+    for prefix in COMPONENT_DIR_PREFIXES:
         if not case_sensitive:
             dir_name = dir_name.lower()
             prefix = prefix.lower()
@@ -81,27 +84,22 @@ def is_side_by_side_dir(dir_name: str, case_sensitive: bool = False) -> bool:
         return dir_name.startswith(prefix)
 
 
-def get_side_by_side_dirs() -> List[str]:
-    side_by_side_dirs = []
-    for component_store_dir in list_dirs(COMPONENT_STORE_PATH, return_name_only=True):
-        if is_side_by_side_dir(component_store_dir):
-            side_by_side_dirs.append(component_store_dir)
+def get_components() -> List[str]:
+    components = []
+    for component_store_dir in list_dirs(COMPONENT_STORE_PATH, return_name_only=True, oldest_to_newest=True):
+        if is_component_dir(component_store_dir):
+            components.append(component_store_dir)
 
-    if not side_by_side_dirs:
+    if not components:
         raise Exception(f"Did not find side by side directories in component store")
 
-    return side_by_side_dirs
-
-
-def is_diff_side_by_side(dir_path: str) -> bool:
-    pass
+    return components
 
 
 def create_base_update_files() -> None:
 
-    for side_by_side_dir in get_side_by_side_dirs():
-        side_by_side_manifest = Manifest(side_by_side_dir)
-        print(side_by_side_manifest.get_manifest_buffer())
+    for component in get_components():
+        component_manifest = Manifest(component)
 
         # Get all component files
 
