@@ -1,16 +1,16 @@
 import os.path
 import re
 import xml.etree.ElementTree as ET
-from typing import List
+from typing import List, Dict
 
-from filesystem_utils import list_files_by_extensions, read_file, list_dirs, DirectoryNotFound
+from filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
 from ms_delta import apply_delta
 from ms_delta_definitions import DELTA_FLAG_NONE
-from xml_utils import load_xml_from_buffer
+from xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
+    XmlElementAttributeNotFound, XmlElementNotFound
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
-COMPONENT_STORE_WINNERS_REGISTRY_PATH = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SideBySide\\Winners"
 
 COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
 
@@ -19,11 +19,11 @@ PACKAGE_VARIABLES = {
     "runtime.help": "%SystemRoot%\\Help",
     "runtime.bootdrive": "%SystemDrive%",
     "runtime.systemroot": "%SystemRoot%",
-    "runtime.documentssettings": "C:\\Users\\weak\\Desktop\\BYOVW\\Temp",  # TODO: Resolve to garbage dir
+    "runtime.documentssettings": "C:\\Users\\Alon\\Desktop\\BYOVW\\Update\\DocumentSettings",  # TODO: Resolve to garbage dir
     "runtime.inf": "%SystemRoot%\\INF",
     "runtime.commonfiles": "%CommonProgramFiles%",
     "runtime.windows": "%SystemRoot%",
-    "runtime.userprofile": "C:\\Users\\weak",  # TODO: Resolve to garbage dir
+    "runtime.userprofile": "C:\\Users\\Alon\\Desktop\\BYOVW\\Update\\UserProfile",  # TODO: Resolve to garbage dir
     "runtime.public": "%Public%",
     "runtime.system": "%SystemRoot%\\System",
     "runtime.programdata": "%ProgramData%",
@@ -61,18 +61,25 @@ class Manifest:
                 self._manifest_buffer = self.decompress_manifest(self._manifest_buffer)
         return self._manifest_buffer
 
-    def get_manifest_files(self) -> List[str]:
-        pass
+    def get_manifest_files(self) -> Dict[str, str]:
+        manifest_files = {}
+        manifest_xml = self.get_manifest_xml()
+        for file_element in find_child_elements_by_match(manifest_xml, "{urn:schemas-microsoft-com:asm.v3}file"):
+            update_dir_path = get_element_attribute(file_element, "destinationPath")
+            update_dir_path_exp = expand_package_variables(update_dir_path)
+            update_file_name = get_element_attribute(file_element, "name")
+            update_file_path = os.path.normpath(fr"\??\{update_dir_path_exp}\{update_file_name}")
+            if manifest_files.get(update_file_name):
+                raise Exception("Duplicate update file name in manifest_files")
+            manifest_files[update_file_name] = update_file_path
+
+        return manifest_files
 
     @staticmethod
     def decompress_manifest(manifest_buffer: bytes) -> bytes:
         manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
         manifest_delta_output_obj = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
         return manifest_delta_output_obj.get_buffer()
-
-
-def get_all_manifest_names() -> List[str]:
-    return list_files_by_extensions(COMPONENT_STORE_MANIFESTS_PATH, ".manifest")
 
 
 def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
@@ -84,10 +91,10 @@ def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
         return dir_name.startswith(prefix)
 
 
-def get_components() -> List[str]:
+def get_components() -> List[Path]:
     components = []
-    for component_store_dir in list_dirs(COMPONENT_STORE_PATH, return_name_only=True, oldest_to_newest=True):
-        if is_component_dir(component_store_dir):
+    for component_store_dir in list_dirs(COMPONENT_STORE_PATH, oldest_to_newest=True):
+        if is_component_dir(component_store_dir.name):
             components.append(component_store_dir)
 
     if not components:
@@ -96,37 +103,62 @@ def get_components() -> List[str]:
     return components
 
 
-def create_base_update_files() -> None:
+def get_component_files(component_path: str) -> List[str]:
+    component_files = []
+    for root, dirs, files in os.walk(component_path):
+        dirs[:] = [d for d in dirs if d not in ["f", "r", "n"]]
+
+        for file in files:
+            component_file_tree = os.path.join(root, file).split(component_path)[1]
+
+            # Skip null files, since they have been added after base
+            if is_path_exists(f"{component_path}\\n{component_file_tree}"):
+                continue
+
+            component_files.append(component_file_tree)
+
+    return component_files
+
+
+def create_base_update_files(base_dir: str) -> List[Dict[str, str]]:
+
+    base_files = []
+    destination_files = []
 
     for component in get_components():
-        component_manifest = Manifest(component)
+        try:
+            manifest = Manifest(component.name)
+            manifest_files = manifest.get_manifest_files()
+        except (XmlElementAttributeNotFound, XmlElementNotFound):
+            continue
 
-        # Get all component files
+        for file in get_component_files(component.full_path):
+            destination = manifest_files[file[1:]]
+            if destination in destination_files:
+                continue  # We already have entry updating this file
 
-        # Iterate over each one, and query against manifest
-        # If not found, raise exception
+            updated_file_path = f"{component.full_path}{file}"
+            base_file_path = updated_file_path
+            reverse_diff_file_path = f"{component.full_path}\\r{file}"
 
-        # If found, create base in a base dir
+            # If there is reverse diff, apply it and create the base file
+            if is_path_exists(reverse_diff_file_path):
+                updated_file_content = read_file(updated_file_path)
+                reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
+                try:
+                    base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
+                except:
+                    print(f"[ERROR] Failed to apply reverse diff for component {reverse_diff_file_path}")
+                    continue
+                base_content = base_delta_output_obj.get_buffer()
+                base_file_path = os.path.normpath(fr"{base_dir}\{component.name}\{file}")
+                os.makedirs(os.path.dirname(base_file_path), exist_ok=True)
+                write_file(base_file_path, base_content)
 
-        # Make sure base is not the same as target file, if same abort delete base
+            base_files.append({"source": base_file_path, "destination": destination})
+            destination_files.append(destination)
 
-        # Add to base files dict/list
-
-        # Add to pending.xml
-
-
-# TODO: This should be the API decompressing ?
-def get_manifest_names_per_build(os_build_number: str) -> List[str]:
-    manifests = get_all_manifest_names()
-    manifests_per_build = []
-    for manifest in manifests:
-        if f"{os_build_number}_" in manifest:
-            manifests_per_build.append(manifest)
-
-    if not manifests_per_build:
-        raise Exception(f"Did not find manifest files for build number: {os_build_number}")
-
-    return manifests_per_build
+    return base_files
 
 
 # TODO: Do I actually need regex for it?
