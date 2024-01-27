@@ -41,7 +41,7 @@ PACKAGE_VARIABLES = {
 
 class Manifest:
 
-    BASE_MANIFEST = read_file("BYOVW\\resources\\WcpBaseManifest.xml")
+    BASE_MANIFEST = read_file("resources\\WcpBaseManifest.xml")
     DCM_HEADER = b"DCM\x01"
 
     def __init__(self, manifest_name: str) -> None:

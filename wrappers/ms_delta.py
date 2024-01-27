@@ -1,6 +1,6 @@
 import ctypes
 
-from ms_delta_definitions import ApplyDeltaB, DELTA_INPUT, DELTA_OUTPUT
+from wrappers.ms_delta_definitions import ApplyDeltaB, DELTA_INPUT, DELTA_OUTPUT
 
 
 def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) -> DELTA_OUTPUT:

