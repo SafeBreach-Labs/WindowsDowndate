@@ -4,7 +4,7 @@ import win32api
 import win32security
 
 
-def convert_privilege_name_to_luid(privilege: Tuple[str, int]):
+def convert_privilege_name_to_luid(privilege: Tuple[str, int]) -> Tuple[int, int]:
     privilege_name, privilege_attrs = privilege
     luid = win32security.LookupPrivilegeValue(None, privilege_name)
 

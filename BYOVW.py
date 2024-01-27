@@ -61,7 +61,6 @@ def downgrade_to_base():
 
 
 def main():
-    enable_backup_privilege()
     input("Press any key to start the attack")
 
 
