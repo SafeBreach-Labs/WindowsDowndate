@@ -3,7 +3,6 @@ import os
 from utils.component_store import create_base_update_files
 from utils.filesystem import create_dir, is_file_contents_equal, is_path_exists, Path
 from utils.xml import load_xml, find_child_elements_by_match, create_element, append_child_element
-from utils.privilege import enable_backup_privilege
 
 """
 Potential issues:

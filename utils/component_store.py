@@ -9,6 +9,7 @@ from wrappers.ms_delta import apply_delta
 from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
 from utils.xml import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound, XmlElementNotFound
+from utils.privilege import enable_backup_privilege, enable_restore_privilege
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
@@ -179,5 +180,9 @@ def expand_package_variables(str_to_expand: str) -> str:
 
 # TODO: Make an RAII wrapper for the loaded hive
 def load_components_hive() -> None:
+    # Make sure the required privileges for loading the hive are held
+    enable_backup_privilege()
+    enable_restore_privilege()
+
     components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
     winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)

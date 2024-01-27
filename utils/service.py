@@ -11,13 +11,10 @@ def set_service_start_type(service_name: str, start_type: int) -> None:
         win32service.SERVICE_NO_CHANGE,
         None,
         None,
-        None,
+        False,
         None,
         None,
         None,
         None
     )
 
-
-def set_service_auto_start(service_name: str) -> None:
-    set_service_start_type(service_name, win32service.SERVICE_AUTO_START)
