@@ -2,15 +2,17 @@ import os.path
 import re
 import xml.etree.ElementTree as ET
 from typing import List, Dict
+import winreg
 
-from filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
-from ms_delta import apply_delta
-from ms_delta_definitions import DELTA_FLAG_NONE
-from xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
+from utils.filesystem import read_file, list_dirs, is_path_exists, write_file, Path
+from wrappers.ms_delta import apply_delta
+from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
+from utils.xml import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound, XmlElementNotFound
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
+COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
 
 COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
 
@@ -120,6 +122,8 @@ def get_component_files(component_path: str) -> List[str]:
     return component_files
 
 
+# For skipped components the path may differ from base and not base. So the tool creates the not base path and places
+# The base in there, but the actual base path does not exist
 def create_base_update_files(base_dir: str) -> List[Dict[str, str]]:
 
     base_files = []
@@ -148,7 +152,7 @@ def create_base_update_files(base_dir: str) -> List[Dict[str, str]]:
                 try:
                     base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
                 except:
-                    print(f"[ERROR] Failed to apply reverse diff for component {reverse_diff_file_path}")
+                    print(f"[WARNING] {destination}")
                     continue
                 base_content = base_delta_output_obj.get_buffer()
                 base_file_path = os.path.normpath(fr"{base_dir}\{component.name}\{file}")
@@ -171,3 +175,9 @@ def expand_package_variables(str_to_expand: str) -> str:
 
     expanded_str = re.sub(pattern, replace, str_to_expand)
     return os.path.expandvars(expanded_str)
+
+
+# TODO: Make an RAII wrapper for the loaded hive
+def load_components_hive() -> None:
+    components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
+    winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)
