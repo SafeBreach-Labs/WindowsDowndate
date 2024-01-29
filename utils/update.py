@@ -41,10 +41,10 @@ def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
 def pend_update(pending_xml_path: str) -> None:
     set_trusted_installer_auto_start()
 
-    # Requires TrustedInstaller so lets try to avoid
+    # Requires TrustedInstaller, can be skipped
     register_winlogon_notification()
 
-    # Requires TrustedInstaller so lets try to avoid
+    # Requires TrustedInstaller, can be skipped
     set_servicing_in_progress()
 
     poqexec_path_exp = os.path.expandvars(POQEXEC_PATH)

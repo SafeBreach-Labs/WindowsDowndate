@@ -22,11 +22,11 @@ PACKAGE_VARIABLES = {
     "runtime.help": "%SystemRoot%\\Help",
     "runtime.bootdrive": "%SystemDrive%",
     "runtime.systemroot": "%SystemRoot%",
-    "runtime.documentssettings": "C:\\Users\\Alon\\Desktop\\BYOVW\\Update\\DocumentSettings",  # TODO: Resolve to garbage dir
+    "runtime.documentssettings": "C:\\Users\\weak\\Desktop\\DocumentSettings",  # TODO: Resolve to garbage dir
     "runtime.inf": "%SystemRoot%\\INF",
     "runtime.commonfiles": "%CommonProgramFiles%",
     "runtime.windows": "%SystemRoot%",
-    "runtime.userprofile": "C:\\Users\\Alon\\Desktop\\BYOVW\\Update\\UserProfile",  # TODO: Resolve to garbage dir
+    "runtime.userprofile": "C:\\Users\\weak\\Desktop\\UserProfile",  # TODO: Resolve to garbage dir
     "runtime.public": "%Public%",
     "runtime.system": "%SystemRoot%\\System",
     "runtime.programdata": "%ProgramData%",

