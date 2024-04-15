@@ -1,15 +1,15 @@
 import os.path
 import re
+import winreg
 import xml.etree.ElementTree as ET
 from typing import List, Dict
-import winreg
 
 from utils.filesystem import read_file, list_dirs, is_path_exists, write_file, Path
-from wrappers.ms_delta import apply_delta
-from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
+from utils.privilege import enable_backup_privilege, enable_restore_privilege
 from utils.xml import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound, XmlElementNotFound
-from utils.privilege import enable_backup_privilege, enable_restore_privilege
+from wrappers.ms_delta import apply_delta
+from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
