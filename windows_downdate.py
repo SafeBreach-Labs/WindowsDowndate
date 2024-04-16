@@ -1,8 +1,9 @@
 import logging
 
 from utils.filesystem import is_path_exists, Path
-from utils.xml import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
+from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
     append_child_element
+from utils.component_store import retrieve_oldest_file_by_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def parse_config_xml() -> None:
 
         # If the source does not exist, retrieve its oldest version from the component store
         if not is_path_exists(source_file_obj.full_path):
-            raise NotImplementedError("Functionality is not implemented")
+            retrieve_oldest_file_by_file_path(destination_file_obj, source_file_obj)
 
         hardlink_dict = {"source": source_file_obj.nt_path, "destination": destination_file_obj.nt_path}
         hardlink_element = create_element("HardlinkFile", hardlink_dict)
