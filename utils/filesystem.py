@@ -3,6 +3,9 @@ import os
 from typing import Union, List
 
 
+# TODO: Better define Path object integration with filesystem.py APIs
+
+
 class DirectoryNotFound(Exception):
     pass
 

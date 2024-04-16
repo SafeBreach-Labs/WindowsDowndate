@@ -72,8 +72,6 @@ class Manifest:
             update_dir_path_exp = expand_package_variables(update_dir_path)
             update_file_name = get_element_attribute(file_element, "name")
             update_file_path = os.path.normpath(fr"\??\{update_dir_path_exp}\{update_file_name}")
-            if manifest_files.get(update_file_name):
-                raise Exception("Duplicate update file name in manifest_files")
             manifest_files[update_file_name] = update_file_path
 
         return manifest_files
