@@ -4,6 +4,7 @@ from typing import Union, List
 
 
 # TODO: Better define Path object integration with filesystem.py APIs
+# TODO: Consider integrating some filesystem.py APIs to the Path object (eg. Path.is_exists)
 
 
 class DirectoryNotFound(Exception):
