@@ -22,9 +22,6 @@ class Path:
         self.name = os.path.basename(self.full_path)
         self.nt_path = os.path.normpath(fr"\??\{self.full_path}")
 
-    def __eq__(self, other) -> bool:
-        return self.name == other
-
 
 def get_path_modification_time(path_obj: Path) -> float:
     return os.path.getmtime(path_obj.full_path)
