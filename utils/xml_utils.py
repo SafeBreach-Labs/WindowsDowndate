@@ -3,10 +3,6 @@ import xml.etree.ElementTree as ET
 from typing import List, Union, Dict
 
 
-class XmlElementNotFound(Exception):
-    pass
-
-
 class XmlElementAttributeNotFound(Exception):
     pass
 
@@ -27,17 +23,11 @@ def load_xml_from_buffer(xml_buffer: Union[str, bytes]) -> ET.ElementTree:
 
 
 def find_child_elements_by_match(element: ET.ElementTree, match: str) -> List[ET.Element]:
-    child_elements = element.findall(match)
-    if not child_elements:
-        raise XmlElementNotFound(f"Failed to find match {match} in element")
-    return child_elements
+    return element.findall(match)
 
 
 def find_first_child_element_by_match(element: ET.ElementTree, match: str) -> ET.Element:
-    child_element = element.find(match)
-    if not child_element:
-        raise XmlElementNotFound(f"Failed to find match {match} in element")
-    return child_element
+    return element.find(match)
 
 
 def get_element_attribute(element: ET.Element, attribute: str) -> str:

@@ -9,7 +9,7 @@ from typing import List
 from utils.filesystem import read_file, list_dirs, is_path_exists, write_file, Path
 from utils.privilege import enable_backup_privilege, enable_restore_privilege
 from utils.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
-    XmlElementNotFound, XmlElementAttributeNotFound
+    XmlElementAttributeNotFound
 from wrappers.ms_delta import apply_delta
 from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
 
@@ -86,16 +86,16 @@ class Manifest:
         if not self._manifest_files:
             self._manifest_files = []
             manifest_xml = self.get_manifest_xml()
-            # TODO: For attribute errors, I may throw everything while the next file element can be valid
-            try:
-                for file_element in find_child_elements_by_match(manifest_xml, "{urn:schemas-microsoft-com:asm.v3}file"):
+            for file_element in find_child_elements_by_match(manifest_xml, "{urn:schemas-microsoft-com:asm.v3}file"):
+                try:
                     update_dir_path = get_element_attribute(file_element, "destinationPath")
                     update_dir_path_exp = expand_package_variables(update_dir_path)
                     update_file_name = get_element_attribute(file_element, "name")
                     update_file_path = os.path.normpath(fr"{update_dir_path_exp}\{update_file_name}")
                     self._manifest_files.append(update_file_path)
-            except (XmlElementNotFound, XmlElementAttributeNotFound):
-                pass  # TODO: Make sure I am not missing anything here, especially for files with no DestinationPath
+                except XmlElementAttributeNotFound:
+                    continue
+                    # TODO: Make sure I am not missing anything here, especially for files with no DestinationPath
 
         return self._manifest_files
 
