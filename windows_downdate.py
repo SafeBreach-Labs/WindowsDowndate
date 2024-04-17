@@ -1,7 +1,7 @@
 import logging
-from dataclasses import dataclass
 from typing import List
 
+from utils.component_store import retrieve_oldest_files_for_update_files, UpdateFile
 from utils.filesystem import is_path_exists, Path
 from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute
 
@@ -11,18 +11,6 @@ logger = logging.getLogger(__name__)
 CONFIG_XML_PATH = "resources/Config.xml"
 PENDING_XML_PATH = "resources/Pending.xml"
 DOWNGRADE_XML_PATH = "resources/Downgrade.xml"
-
-
-@dataclass
-class UpdateFile:
-
-    source: Path
-    destination: Path
-    should_retrieve_oldest: bool
-    is_oldest_retrieved: bool
-
-    def to_hardlink_dict(self):
-        return {"source": self.source.nt_path, "destination": self.destination.nt_path}
 
 
 def parse_args() -> None:
@@ -69,6 +57,7 @@ def main() -> None:
     parse_args()
     init_logger()
     update_files = parse_config_xml()
+    retrieve_oldest_files_for_update_files(update_files)
 
 
 if __name__ == '__main__':
