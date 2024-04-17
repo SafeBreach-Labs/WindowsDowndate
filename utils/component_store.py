@@ -1,12 +1,14 @@
 import os.path
 import re
+import shutil
 import winreg
 import xml.etree.ElementTree as ET
 from typing import List
 
 from utils.filesystem import read_file, list_dirs, is_path_exists, write_file, Path
 from utils.privilege import enable_backup_privilege, enable_restore_privilege
-from utils.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, XmlElementNotFound,XmlElementAttributeNotFound
+from utils.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
+    XmlElementNotFound, XmlElementAttributeNotFound
 from wrappers.ms_delta import apply_delta
 from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
 
@@ -117,6 +119,7 @@ def get_components() -> List[Path]:
     return components
 
 
+# TODO: Null diffs are also needed in case this is the first version
 def get_component_files(component_path: str) -> List[str]:
     component_files = []
     for root, dirs, files in os.walk(component_path):
@@ -134,24 +137,29 @@ def get_component_files(component_path: str) -> List[str]:
     return component_files
 
 
+# TODO: This repeated iteration over the component store is not efficient, make it better
 def retrieve_oldest_file_by_file_path(file_path: Path, oldest_file_path: Path) -> None:
 
     for component in get_components():
+
         manifest = Manifest(component.name)
         if not manifest.is_file_in_manifest_files(file_path.full_path):
             continue
 
+        updated_file_path = f"{component.full_path}\\{file_path.name}"
+        reverse_diff_file_path = f"{component.full_path}\\r\\{file_path.name}"
 
-        updated_file_path = f"{component.full_path}{file_path.name}"
-        reverse_diff_file_path = f"{component.full_path}\\r{file_path.name}"
-
-        # If there is reverse diff, apply it and create the base file
+        # If there is reverse diff, apply it to create the base file
         if is_path_exists(reverse_diff_file_path):
             updated_file_content = read_file(updated_file_path)
             reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
             base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
             base_content = base_delta_output_obj.get_buffer()
             write_file(oldest_file_path.full_path, base_content)
+
+        # If there is no reverse diff, the update file is the oldest file available
+        else:
+            shutil.copyfile(updated_file_path, oldest_file_path.full_path)
 
 
 # TODO: Do I actually need regex for it?
