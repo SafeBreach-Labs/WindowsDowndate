@@ -119,24 +119,6 @@ def get_components() -> List[Path]:
     return components
 
 
-# TODO: Null diffs are also needed in case this is the first version
-def get_component_files(component_path: str) -> List[str]:
-    component_files = []
-    for root, dirs, files in os.walk(component_path):
-        dirs[:] = [d for d in dirs if d not in ["f", "r", "n"]]
-
-        for file in files:
-            component_file_tree = os.path.join(root, file).split(component_path)[1]
-
-            # Skip null files, since they have been added after base
-            if is_path_exists(f"{component_path}\\n{component_file_tree}"):
-                continue
-
-            component_files.append(component_file_tree)
-
-    return component_files
-
-
 # TODO: This repeated iteration over the component store is not efficient, make it better
 def retrieve_oldest_file_by_file_path(file_path: Path, oldest_file_path: Path) -> None:
 
