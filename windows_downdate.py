@@ -2,8 +2,9 @@ import logging
 from typing import List
 
 from utils.component_store import retrieve_oldest_files_for_update_files, UpdateFile
-from utils.filesystem import is_path_exists, Path
-from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute
+from utils.filesystem import is_path_exists, Path, is_file_contents_equal
+from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
+    append_child_element
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +54,30 @@ def parse_config_xml() -> List[UpdateFile]:
     return update_files
 
 
+def write_update_files_to_downgrade_xml(update_files: List[UpdateFile]) -> None:
+    pending_xml = load_xml(PENDING_XML_PATH)
+    poq_element = find_child_elements_by_match(pending_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
+
+    for update_file in update_files:
+
+        # Let's make sure we do not update files that are the same
+        if is_file_contents_equal(update_file.source.full_path, update_file.destination.full_path):
+            logger.info(f"Skipping update of {update_file.destination.name}, source and destination are the same")
+            continue
+
+        hardlink_dict = update_file.to_hardlink_dict()
+        hardlink_element = create_element("HardlinkFile", hardlink_dict)
+        append_child_element(poq_element, hardlink_element)
+
+    pending_xml.write(DOWNGRADE_XML_PATH)
+
+
 def main() -> None:
     parse_args()
     init_logger()
     update_files = parse_config_xml()
     retrieve_oldest_files_for_update_files(update_files)
+    write_update_files_to_downgrade_xml(update_files)
 
 
 if __name__ == '__main__':
