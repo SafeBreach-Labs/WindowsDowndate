@@ -137,11 +137,12 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
 
     for component in get_components():
 
+        manifest = Manifest(component.name)
+
         for update_file in update_files:
             if not update_file.should_retrieve_oldest or update_file.is_oldest_retrieved:
                 continue
 
-            manifest = Manifest(component.name)
             if not manifest.is_file_in_manifest_files(update_file.destination.full_path):
                 continue
 
