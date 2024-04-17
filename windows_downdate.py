@@ -9,9 +9,9 @@ from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_
 logger = logging.getLogger(__name__)
 
 
-CONFIG_XML_PATH = "resources/Config.xml"
-PENDING_XML_PATH = "resources/Pending.xml"
-DOWNGRADE_XML_PATH = "resources/Downgrade.xml"
+CONFIG_XML_PATH = "resources\\Config.xml"
+PENDING_XML_PATH = "resources\\Pending.xml"
+DOWNGRADE_XML_PATH = "resources\\Downgrade.xml"
 
 
 def parse_args() -> None:
