@@ -1,4 +1,4 @@
-import os.path
+import os
 import re
 import shutil
 import winreg
@@ -134,17 +134,17 @@ def get_components() -> List[Path]:
 
 
 def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
-
     for component in get_components():
-
         manifest = Manifest(component.name)
-
         for update_file in update_files:
             if not update_file.should_retrieve_oldest or update_file.is_oldest_retrieved:
                 continue
 
             if not manifest.is_file_in_manifest_files(update_file.destination.full_path):
                 continue
+
+            # Create the directory tree of the update file source
+            os.makedirs(update_file.source.parent_dir, exist_ok=True)
 
             updated_file_path = f"{component.full_path}\\{update_file.destination.name}"
             reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination.name}"
