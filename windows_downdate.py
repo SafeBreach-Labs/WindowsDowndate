@@ -3,17 +3,22 @@ import logging
 import sys
 from typing import List
 
-from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files, UpdateFile
+from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files
 from windows_downdate.filesystem_utils import is_path_exists, Path, is_file_contents_equal
-from windows_downdate.update_utils import pend_update
+from windows_downdate.system_utils import restart_system
+from windows_downdate.update_file import UpdateFile
+from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
-    append_child_element
+    append_child_element, ET
+
 
 logger = logging.getLogger(__name__)
 
 
-PENDING_XML_PATH = "resources\\Pending.xml"
 DOWNGRADE_XML_PATH = "resources\\Downgrade.xml"
+
+
+# TODO: Add logs
 
 
 def parse_args() -> argparse.Namespace:
@@ -79,9 +84,9 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     return update_files
 
 
-def write_update_files_to_downgrade_xml(update_files: List[UpdateFile]) -> None:
-    pending_xml = load_xml(PENDING_XML_PATH)
-    poq_element = find_child_elements_by_match(pending_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
+def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
+    downgrade_xml = get_empty_pending_xml()
+    poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 
     for update_file in update_files:
 
@@ -94,7 +99,7 @@ def write_update_files_to_downgrade_xml(update_files: List[UpdateFile]) -> None:
         hardlink_element = create_element("HardlinkFile", hardlink_dict)
         append_child_element(poq_element, hardlink_element)
 
-    pending_xml.write(DOWNGRADE_XML_PATH)
+    return downgrade_xml
 
 
 def main() -> None:
@@ -105,10 +110,11 @@ def main() -> None:
         if not is_path_exists(args.config_file):
             raise Exception("Config.xml file does not exist")
 
+        downgrade_xml_path = DOWNGRADE_XML_PATH
         update_files = parse_config_xml(args.config_file)
         retrieve_oldest_files_for_update_files(update_files)
-        write_update_files_to_downgrade_xml(update_files)
-        downgrade_xml_path = DOWNGRADE_XML_PATH
+        downgrade_xml = craft_downgrade_xml(update_files)
+        downgrade_xml.write(downgrade_xml_path)
 
     else:
         if not is_path_exists(args.custom_pending_xml):
@@ -135,7 +141,7 @@ def main() -> None:
     pend_update(downgrade_xml_path)
 
     if args.force_restart:
-        raise NotImplementedError("Not implemented yet")
+        restart_system(args.restart_timeout)
 
 
 if __name__ == '__main__':

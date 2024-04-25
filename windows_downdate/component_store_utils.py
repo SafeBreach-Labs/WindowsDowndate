@@ -3,15 +3,14 @@ import re
 import shutil
 import winreg
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
 from typing import List
 
 from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
+from windows_downdate.ms_delta.ms_delta import apply_delta, DELTA_FLAG_NONE
 from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
+from windows_downdate.update_file import UpdateFile
 from windows_downdate.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound
-from windows_downdate.ms_delta.ms_delta import apply_delta, DELTA_FLAG_NONE
-
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
@@ -42,23 +41,11 @@ PACKAGE_VARIABLES = {
 }
 
 
-# TODO: Think of the proper file to place this class in
-@dataclass
-class UpdateFile:
-
-    source: Path
-    destination: Path
-    should_retrieve_oldest: bool
-    is_oldest_retrieved: bool
-
-    def to_hardlink_dict(self):
-        return {"source": self.source.nt_path, "destination": self.destination.nt_path}
-
-
 # TODO: Reconsider XML exceptions
 
 class Manifest:
 
+    # TODO: Load it from WCP.dll PE resources
     BASE_MANIFEST = read_file("resources\\WcpBaseManifest.xml")
     DCM_HEADER = b"DCM\x01"
 
