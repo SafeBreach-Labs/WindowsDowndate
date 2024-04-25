@@ -1,6 +1,6 @@
 import winreg
 
-from utils.registry import set_reg_value
+from windows_downdate.registry_utils import set_reg_value
 
 WINLOGON_NOTIFICATIONS_COMPONENTS_REGISTRY_PATH = "SYSTEM\\CurrentControlSet\\Control\\Winlogon\\Notifications\\Components"
 

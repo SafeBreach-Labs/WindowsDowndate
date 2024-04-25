@@ -6,12 +6,12 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from typing import List
 
-from utils.filesystem import read_file, list_dirs, is_path_exists, write_file, Path
-from utils.privilege import enable_backup_privilege, enable_restore_privilege
-from utils.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
+from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
+from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
+from windows_downdate.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound
-from wrappers.ms_delta import apply_delta
-from wrappers.ms_delta_definitions import DELTA_FLAG_NONE
+from windows_downdate.ms_delta.ms_delta import apply_delta, DELTA_FLAG_NONE
+
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"

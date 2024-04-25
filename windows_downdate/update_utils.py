@@ -3,10 +3,10 @@ import winreg
 
 import win32service
 
-from utils.component_store import load_components_hive
-from utils.registry import set_reg_value
-from utils.service import set_service_start_type
-from utils.winlogon import set_winlogon_notification_event
+from windows_downdate.component_store_utils import load_components_hive
+from windows_downdate.registry_utils import set_reg_value
+from windows_downdate.service_utils import set_service_start_type
+from windows_downdate.winlogon_utils import set_winlogon_notification_event
 
 CBS_REGISTRY_PATH = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Component Based Servicing"
 
