@@ -65,8 +65,8 @@ class Manifest:
     def get_manifest_buffer(self) -> bytes:
         if not self._manifest_buffer:
             self._manifest_buffer = read_file(self._manifest_path)
-            if self._manifest_buffer.startswith(Manifest.DCM_HEADER):
-                self._manifest_buffer = self.decompress_manifest(self._manifest_buffer)
+            if self._is_manifest_diff_type():
+                self._manifest_buffer = self._decompress_manifest()
         return self._manifest_buffer
 
     def get_manifest_files(self) -> List[str]:
@@ -92,11 +92,15 @@ class Manifest:
                 return True
         return False
 
-    @staticmethod
-    def decompress_manifest(manifest_buffer: bytes) -> bytes:
+    def _decompress_manifest(self) -> bytes:
+        manifest_buffer = self.get_manifest_buffer()
         manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
         manifest_delta_output_obj = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
         return manifest_delta_output_obj.get_buffer()
+
+    def _is_manifest_diff_type(self) -> bool:
+        manifest_buffer = self.get_manifest_buffer()
+        return manifest_buffer.startswith(Manifest.DCM_HEADER)
 
 
 def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:

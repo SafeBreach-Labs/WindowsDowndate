@@ -63,7 +63,7 @@ def is_file_suits_extensions(file: str, extensions: Union[List[str], str]) -> bo
     if isinstance(extensions, str):
         extensions = [extensions]
 
-    file_name, file_extension = os.path.splitext(file)
+    _, file_extension = os.path.splitext(file)
     return file_extension in extensions
 
     
