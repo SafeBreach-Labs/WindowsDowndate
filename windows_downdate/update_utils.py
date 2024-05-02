@@ -4,7 +4,7 @@ import winreg
 import win32service
 
 from windows_downdate.component_store_utils import load_components_hive
-from windows_downdate.registry_utils import set_reg_value
+from windows_downdate.registry_utils import set_reg_value, get_reg_values
 from windows_downdate.service_utils import set_service_start_type
 from windows_downdate.winlogon_utils import set_winlogon_notification_event
 from windows_downdate.xml_utils import load_xml_from_buffer, ET
@@ -91,3 +91,13 @@ def pend_update(pending_xml_path: str) -> None:
     # TODO: Load identifier in runtime
     pending_xml_identifier = b"916ae75edb30da0146730000dc1be027"
     set_pending_xml_identifier(pending_xml_identifier)
+
+
+def get_servicing_stack_path() -> str:
+    cbs_version_registry_path = f"{CBS_REGISTRY_PATH}\\Version"
+    cbs_version_key = get_reg_values(winreg.HKEY_LOCAL_MACHINE, cbs_version_registry_path)
+    if len(cbs_version_key) > 1:
+        raise Exception("CBS Version key is not expected to have more then one value")
+
+    _, servicing_stack_path, _ = cbs_version_key[0]
+    return servicing_stack_path
