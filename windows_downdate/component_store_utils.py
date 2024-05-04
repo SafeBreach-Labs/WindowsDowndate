@@ -122,6 +122,7 @@ def get_components() -> List[Path]:
     return components
 
 
+# TODO: Update file related function, so should not reside here
 def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
     for component in get_components():
         manifest = Manifest(component.name)
