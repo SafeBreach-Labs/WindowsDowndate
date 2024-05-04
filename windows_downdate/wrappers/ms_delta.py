@@ -1,7 +1,7 @@
 import ctypes
 from ctypes import wintypes
-from typing import Callable, Tuple, Any
 
+from windows_downdate.wrappers import raise_if_false
 
 ##############
 # Structures #
@@ -35,17 +35,6 @@ class DELTA_OUTPUT(ctypes.Structure):
 
 
 P_DELTA_OUTPUT = ctypes.POINTER(DELTA_OUTPUT)
-
-
-##################
-# Error handlers #
-##################
-
-
-def raise_if_false(result: int, func: Callable = None, arguments: Tuple[Any] = ()) -> int:
-    if not result:
-        raise ctypes.WinError(result, "Error message here")  # TODO: Add FormatMessage
-    return result
 
 
 ########################
