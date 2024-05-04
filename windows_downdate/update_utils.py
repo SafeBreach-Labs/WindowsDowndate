@@ -1,10 +1,13 @@
 import os
 import winreg
 
+import win32api
 import win32service
 
-from windows_downdate.component_store_utils import load_components_hive
+from windows_downdate.filesystem_utils import Path
+from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
 from windows_downdate.registry_utils import set_reg_value, get_reg_values
+from windows_downdate.resource_utils import get_first_resource_language
 from windows_downdate.service_utils import set_service_start_type
 from windows_downdate.winlogon_utils import set_winlogon_notification_event
 from windows_downdate.xml_utils import load_xml_from_buffer, ET
@@ -15,6 +18,10 @@ SIDE_BY_SIDE_CONFIGURATION_REGISTRY_PATH = "SOFTWARE\\Microsoft\\Windows\\Curren
 
 POQEXEC_PATH = "%SystemRoot%\\System32\\poqexec.exe"
 
+COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
+
+RT_WCP_BASE_MANIFEST = 614
+RN_WCP_BASE_MANIFEST = 1
 
 EMPTY_PENDING_XML = """<?xml version='1.0' encoding='utf-8'?>
 <PendingTransaction Version="3.1" WcpVersion="10.0.22621.2567 (WinBuild.160101.0800)" Identifier="916ae75edb30da0146730000dc1be027">
@@ -63,6 +70,15 @@ def register_poqexec_cmd(poqexec_cmd: str) -> None:
                   winreg.REG_MULTI_SZ)
 
 
+def load_components_hive() -> None:
+    # Make sure the required privileges for loading the hive are held
+    enable_backup_privilege()
+    enable_restore_privilege()
+
+    components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
+    winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)
+
+
 def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
     # TODO: Theres gotta be a better way
     pending_xml_identifier_unicode = b"\x00".join(bytes([byte]) for byte in pending_xml_identifier) + b"\x00"
@@ -93,11 +109,18 @@ def pend_update(pending_xml_path: str) -> None:
     set_pending_xml_identifier(pending_xml_identifier)
 
 
-def get_servicing_stack_path() -> str:
+def get_servicing_stack_path() -> Path:
     cbs_version_registry_path = f"{CBS_REGISTRY_PATH}\\Version"
     cbs_version_key = get_reg_values(winreg.HKEY_LOCAL_MACHINE, cbs_version_registry_path)
     if len(cbs_version_key) > 1:
         raise Exception("CBS Version key is not expected to have more then one value")
 
     _, servicing_stack_path, _ = cbs_version_key[0]
-    return servicing_stack_path
+    return Path(servicing_stack_path)
+
+
+def get_wcp_base_manifest() -> bytes:
+    servicing_stack_path = get_servicing_stack_path()
+    wcp_dll_path = f"{servicing_stack_path.full_path}\\wcp.dll"
+    wcp_module = win32api.LoadLibrary(wcp_dll_path)
+    return get_first_resource_language(wcp_module, RT_WCP_BASE_MANIFEST, RN_WCP_BASE_MANIFEST)

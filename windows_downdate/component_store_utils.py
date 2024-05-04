@@ -1,20 +1,18 @@
 import os
 import re
 import shutil
-import winreg
 import xml.etree.ElementTree as ET
 from typing import List
 
-from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
-from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
-from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
 from windows_downdate import UpdateFile
+from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
+from windows_downdate.update_utils import get_wcp_base_manifest
+from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 from windows_downdate.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound
 
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 COMPONENT_STORE_MANIFESTS_PATH = "%SystemRoot%\\WinSxS\\Manifests\\"
-COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
 
 COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
 
@@ -42,11 +40,11 @@ PACKAGE_VARIABLES = {
 
 
 # TODO: Reconsider XML exceptions
+# TODO: Better define the difference between this file and update_utils.py
 
 class Manifest:
 
-    # TODO: Load it from WCP.dll PE resources
-    BASE_MANIFEST = read_file("resources\\WcpBaseManifest.xml")
+    BASE_MANIFEST = get_wcp_base_manifest()
     DCM_HEADER = b"DCM\x01"
 
     def __init__(self, manifest_name: str) -> None:
@@ -170,12 +168,3 @@ def expand_package_variables(str_to_expand: str) -> str:
 
     expanded_str = re.sub(pattern, replace, str_to_expand)
     return os.path.expandvars(expanded_str)
-
-
-def load_components_hive() -> None:
-    # Make sure the required privileges for loading the hive are held
-    enable_backup_privilege()
-    enable_restore_privilege()
-
-    components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
-    winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)

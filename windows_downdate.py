@@ -106,12 +106,12 @@ def main() -> None:
     init_logger()
     args = parse_args()
 
-    if args.config_file:
-        if not is_path_exists(args.config_file):
+    if args.config_xml:
+        if not is_path_exists(args.config_xml):
             raise Exception("Config.xml file does not exist")
 
         downgrade_xml_path = DOWNGRADE_XML_PATH
-        update_files = parse_config_xml(args.config_file)
+        update_files = parse_config_xml(args.config_xml)
         retrieve_oldest_files_for_update_files(update_files)
         downgrade_xml = craft_downgrade_xml(update_files)
         downgrade_xml.write(downgrade_xml_path)
