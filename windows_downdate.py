@@ -120,7 +120,7 @@ def main() -> None:
         raise NotImplementedError("Not implemented yet")
 
     if not is_path_exists(args.config_xml):
-        raise Exception("Config.xml file does not exist")
+        raise FileNotFoundError("Config.xml file does not exist")
 
     update_files = parse_config_xml(args.config_xml)
 
