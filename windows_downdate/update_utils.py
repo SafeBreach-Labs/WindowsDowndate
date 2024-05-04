@@ -1,10 +1,10 @@
 import os
 import winreg
+from typing import Tuple
 
 import win32api
 import win32service
 
-from windows_downdate.filesystem_utils import Path
 from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
 from windows_downdate.registry_utils import set_reg_value, get_reg_values
 from windows_downdate.resource_utils import get_first_resource_language
@@ -109,18 +109,23 @@ def pend_update(pending_xml_path: str) -> None:
     set_pending_xml_identifier(pending_xml_identifier)
 
 
-def get_servicing_stack_path() -> Path:
+def get_servicing_stack_info() -> Tuple[str, str, int]:
     cbs_version_registry_path = f"{CBS_REGISTRY_PATH}\\Version"
     cbs_version_key = get_reg_values(winreg.HKEY_LOCAL_MACHINE, cbs_version_registry_path)
     if len(cbs_version_key) > 1:
         raise Exception("CBS Version key is not expected to have more then one value")
+    servicing_version, servicing_path, servicing_version_reg_type = cbs_version_key[0]
+    servicing_path_exp = os.path.expandvars(servicing_path)
+    return servicing_version, servicing_path_exp, servicing_version_reg_type
 
-    _, servicing_stack_path, _ = cbs_version_key[0]
-    return Path(servicing_stack_path)
+
+def get_servicing_stack_path() -> str:
+    _, servicing_stack_path, _ = get_servicing_stack_info()
+    return servicing_stack_path
 
 
 def get_wcp_base_manifest() -> bytes:
     servicing_stack_path = get_servicing_stack_path()
-    wcp_dll_path = f"{servicing_stack_path.full_path}\\wcp.dll"
+    wcp_dll_path = f"{servicing_stack_path}\\wcp.dll"
     wcp_module = win32api.LoadLibrary(wcp_dll_path)
     return get_first_resource_language(wcp_module, RT_WCP_BASE_MANIFEST, RN_WCP_BASE_MANIFEST)
