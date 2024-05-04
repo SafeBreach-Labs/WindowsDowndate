@@ -15,9 +15,6 @@ from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, g
 logger = logging.getLogger(__name__)
 
 
-DOWNGRADE_XML_PATH = "resources\\Downgrade.xml"
-
-
 # TODO: Add logs
 
 
@@ -143,7 +140,7 @@ def main() -> None:
 
     retrieve_oldest_files_for_update_files(update_files)
     downgrade_xml = craft_downgrade_xml(update_files)
-    downgrade_xml_path = f"{cwd}\\{DOWNGRADE_XML_PATH}"
+    downgrade_xml_path = f"{cwd}\\Downgrade.xml"
     downgrade_xml.write(downgrade_xml_path)
     pend_update(downgrade_xml_path)
 
