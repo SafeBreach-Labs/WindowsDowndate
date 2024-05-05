@@ -1,5 +1,9 @@
 <Configuration>
     <UpdateFilesList>
-        <UpdateFile source="C:\new_ntoskrnl.exe" destination="C:\Windows\System32\ntoskrnl.exe" />
+        <UpdateFile source="C:\Users\User\UpdateFiles\ntoskrnl.exe" destination="C:\Windows\System32\ntoskrnl.exe" />
+        <UpdateFile source="C:\Users\User\UpdateFiles\ntfs.sys" destination="C:\Windows\System32\Drivers\ntfs.sys" />
+        <UpdateFile source="C:\Users\User\UpdateFiles\ntfs.sys.mui" destination="C:\Windows\System32\Drivers\en-US\ntfs.sys.mui" />
+        <UpdateFile source="C:\Users\User\UpdateFiles\FltMgr.sys" destination="C:\Windows\System32\Drivers\FltMgr.sys" />
+        <UpdateFile source="C:\Users\User\UpdateFiles\FltMgr.sys.mui" destination="C:\Windows\System32\Drivers\en-US\FltMgr.sys.mui" />
     </UpdateFilesList>
 </Configuration>
