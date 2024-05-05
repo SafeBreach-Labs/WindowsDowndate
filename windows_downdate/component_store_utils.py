@@ -130,14 +130,14 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
             if not update_file.should_retrieve_oldest or update_file.is_oldest_retrieved:
                 continue
 
-            if not manifest.is_file_in_manifest_files(update_file.destination.full_path):
+            if not manifest.is_file_in_manifest_files(update_file.destination_path_obj.full_path):
                 continue
 
             # Create the directory tree of the update file source
-            os.makedirs(update_file.source.parent_dir, exist_ok=True)
+            os.makedirs(update_file.source_path_obj.parent_dir, exist_ok=True)
 
-            updated_file_path = f"{component.full_path}\\{update_file.destination.name}"
-            reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination.name}"
+            updated_file_path = f"{component.full_path}\\{update_file.destination_path_obj.name}"
+            reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination_path_obj.name}"
 
             # If there is reverse diff, apply it to create the base file
             if is_path_exists(reverse_diff_file_path):
@@ -145,18 +145,18 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
                 reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
                 base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
                 base_content = base_delta_output_obj.get_buffer()
-                write_file(update_file.source.full_path, base_content)
+                write_file(update_file.source_path_obj.full_path, base_content)
 
             # If there is no reverse diff, the update file is the oldest file available
             else:
-                shutil.copyfile(updated_file_path, update_file.source.full_path)
+                shutil.copyfile(updated_file_path, update_file.source_path_obj.full_path)
 
             update_file.is_oldest_retrieved = True
 
     for update_file in update_files:
         if update_file.should_retrieve_oldest and not update_file.is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
-                            f"Destination {update_file.destination.name} is not part of the component store")
+                            f"Destination {update_file.destination_path_obj.name} is not part of the component store")
 
 
 # TODO: Do I actually need regex for it?
