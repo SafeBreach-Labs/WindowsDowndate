@@ -5,6 +5,7 @@ import win32con
 import win32security
 
 from windows_downdate.process_utils import get_process_id_by_name
+from windows_downdate.service_utils import start_service
 
 
 def convert_privilege_name_to_luid(privilege: Tuple[str, int]) -> Tuple[int, int]:
@@ -45,3 +46,10 @@ def impersonate_process_by_process_id(process_id: int) -> None:
 def impersonate_nt_system() -> None:
     winlogon_pid = get_process_id_by_name("winlogon.exe")
     impersonate_process_by_process_id(winlogon_pid)
+
+
+def impersonate_trusted_installer():
+    impersonate_nt_system()
+    start_service("TrustedInstaller")
+    trusted_installer_pid = get_process_id_by_name("TrustedInstaller.exe")
+    impersonate_process_by_process_id(trusted_installer_pid)
