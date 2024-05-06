@@ -41,6 +41,7 @@ P_DELTA_OUTPUT = ctypes.POINTER(DELTA_OUTPUT)
 # Function definitions #
 ########################
 
+
 # TODO: Move definition to wrapper (?)
 ApplyDeltaB = ctypes.windll.msdelta.ApplyDeltaB
 ApplyDeltaB.argstypes = [ctypes.c_int64, DELTA_INPUT, DELTA_INPUT, P_DELTA_OUTPUT]
