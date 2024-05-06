@@ -36,10 +36,10 @@ def impersonate_process_by_process_id(process_id: int) -> None:
     process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id)
     process_token_handle = win32security.OpenProcessToken(process_handle, win32con.TOKEN_DUPLICATE)
     dup_process_token_handle = win32security.DuplicateTokenEx(process_token_handle,
-                                                              win32con.MAXIMUM_ALLOWED,
-                                                              None,
                                                               win32security.SecurityImpersonation,
-                                                              win32security.TokenImpersonation)
+                                                              win32con.TOKEN_ALL_ACCESS,
+                                                              win32security.TokenImpersonation,
+                                                              win32security.SECURITY_ATTRIBUTES())
     win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
 
 
