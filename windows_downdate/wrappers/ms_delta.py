@@ -3,6 +3,7 @@ from ctypes import wintypes
 
 from windows_downdate.wrappers import raise_if_false
 
+
 ##############
 # Structures #
 ##############
@@ -55,9 +56,9 @@ DeltaFree.restype = wintypes.BOOL
 DeltaFree.errcheck = raise_if_false
 
 
-############
-# Wrappers #
-############
+#####################
+# Function Wrappers #
+#####################
 
 
 def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) -> DELTA_OUTPUT:
