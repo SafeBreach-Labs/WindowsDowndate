@@ -22,16 +22,6 @@ def adjust_token_privileges(privileges: List[Tuple[str, int]], disable_all_privi
     win32security.AdjustTokenPrivileges(token_handle, disable_all_privileges_flag, privileges_with_luids)
 
 
-def enable_backup_privilege() -> None:
-    privileges = [(win32security.SE_BACKUP_NAME, win32security.SE_PRIVILEGE_ENABLED)]
-    adjust_token_privileges(privileges)
-
-
-def enable_restore_privilege() -> None:
-    privilege = [(win32security.SE_RESTORE_NAME, win32security.SE_PRIVILEGE_ENABLED)]
-    adjust_token_privileges(privilege)
-
-
 def enable_privilege(privilege_name: str) -> None:
     privilege = [(privilege_name, win32security.SE_PRIVILEGE_ENABLED)]
     adjust_token_privileges(privilege)

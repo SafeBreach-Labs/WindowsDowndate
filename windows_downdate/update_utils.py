@@ -3,9 +3,10 @@ import winreg
 from typing import Tuple
 
 import win32api
+import win32security
 import win32service
 
-from windows_downdate.privilege_utils import enable_backup_privilege, enable_restore_privilege
+from windows_downdate.privilege_utils import enable_privilege
 from windows_downdate.registry_utils import set_reg_value, get_reg_values
 from windows_downdate.resource_utils import get_first_resource_language
 from windows_downdate.service_utils import set_service_start_type
@@ -72,8 +73,8 @@ def register_poqexec_cmd(poqexec_cmd: str) -> None:
 
 def load_components_hive() -> None:
     # Make sure the required privileges for loading the hive are held
-    enable_backup_privilege()
-    enable_restore_privilege()
+    enable_privilege(win32security.SE_BACKUP_NAME)
+    enable_privilege(win32security.SE_RESTORE_NAME)
 
     components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
     winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)
