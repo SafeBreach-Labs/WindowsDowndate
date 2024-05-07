@@ -32,7 +32,21 @@ def enable_restore_privilege() -> None:
     adjust_token_privileges(privilege)
 
 
-def impersonate_process_by_process_id(process_id: int) -> None:
+def enable_privilege(privilege_name: str) -> None:
+    privilege = [(privilege_name, win32security.SE_PRIVILEGE_ENABLED)]
+    adjust_token_privileges(privilege)
+
+
+def impersonate_process_by_process_name(process_name: str) -> None:
+    """
+    TODO:
+        read more about ImpersonateLoggedOnUser, and how pywin32 implements it. It may fail sometimes without raising
+        The behavior encountered is that without SeImpersonate, calling ImpersonateLoggedOnUser wont fail
+        While the actual impersonation is not successful
+        If SeImpersonate is enabled, the impersonation is successful
+    """
+
+    process_id = get_process_id_by_name(process_name)
     process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id)
     process_token_handle = win32security.OpenProcessToken(process_handle, win32con.TOKEN_DUPLICATE)
     dup_process_token_handle = win32security.DuplicateTokenEx(process_token_handle,
@@ -44,12 +58,11 @@ def impersonate_process_by_process_id(process_id: int) -> None:
 
 
 def impersonate_nt_system() -> None:
-    winlogon_pid = get_process_id_by_name("winlogon.exe")
-    impersonate_process_by_process_id(winlogon_pid)
+    impersonate_process_by_process_name("winlogon.exe")
 
 
 def impersonate_trusted_installer():
     impersonate_nt_system()
+    enable_privilege(win32security.SE_IMPERSONATE_NAME)
     start_service("TrustedInstaller")
-    trusted_installer_pid = get_process_id_by_name("TrustedInstaller.exe")
-    impersonate_process_by_process_id(trusted_installer_pid)
+    impersonate_process_by_process_name("TrustedInstaller.exe")
