@@ -1,11 +1,15 @@
 from typing import List, Tuple
 
+import ntsecuritycon
+import pywintypes
 import win32api
 import win32con
 import win32security
+import winerror
 
 from windows_downdate.process_utils import get_process_id_by_name
 from windows_downdate.service_utils import start_service
+from windows_downdate.wrappers.kernel32 import TokenInformationClass
 
 
 def convert_privilege_name_to_luid(privilege: Tuple[str, int]) -> Tuple[int, int]:
@@ -56,3 +60,26 @@ def impersonate_trusted_installer() -> None:
     enable_privilege(win32security.SE_IMPERSONATE_NAME)
     start_service("TrustedInstaller")
     impersonate_process_by_process_name("TrustedInstaller.exe")
+
+
+def is_trusted_installer() -> bool:
+    try:
+        thread_token = win32security.OpenThreadToken(win32api.GetCurrentThread(), win32security.TOKEN_QUERY, False)
+    except pywintypes.error as e:
+        if e.winerror == winerror.ERROR_NO_TOKEN:
+            return False
+        raise
+
+    group_info_list = win32security.GetTokenInformation(thread_token, TokenInformationClass.TokenGroups)
+    for group_info in group_info_list:
+        group_sid, group_flag = group_info
+
+        # TODO: Verify this logic, and other potential flags
+        if not group_flag & ntsecuritycon.SE_GROUP_ENABLED_BY_DEFAULT or not group_flag & ntsecuritycon.SE_GROUP_ENABLED:
+            continue
+
+        user_name, domain, _ = win32security.LookupAccountSid(None, group_sid)
+        if f"{user_name}\\{domain}".lower() == "TrustedInstaller\\NT SERVICE".lower():
+            return True
+
+    return False
