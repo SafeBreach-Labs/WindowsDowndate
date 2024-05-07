@@ -56,11 +56,11 @@ def start_service(service_name: str, service_args: List[Any] = None, resume_if_p
 
     retry_counter = 0
     while service_status.current_state in SERVICE_PENDING_STATES:
+        retry_counter += 1
+        if retry_counter > PENDING_STATES_QUERY_RETRIES:
+            raise Exception(f"Service {service_name} is in pending state {service_status.current_state} for too long")
         time.sleep(WAIT_BEFORE_NEXT_QUERY_RETRY)
         service_status = query_service_status(service_name)
-        retry_counter += 1
-        if retry_counter == PENDING_STATES_QUERY_RETRIES:
-            raise Exception(f"Service {service_name} is in pending state {service_status.current_state} for too long")
 
     if service_status.current_state == win32service.SERVICE_RUNNING:
         return
