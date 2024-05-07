@@ -51,7 +51,7 @@ def impersonate_nt_system() -> None:
     impersonate_process_by_process_name("winlogon.exe")
 
 
-def impersonate_trusted_installer():
+def impersonate_trusted_installer() -> None:
     impersonate_nt_system()
     enable_privilege(win32security.SE_IMPERSONATE_NAME)
     start_service("TrustedInstaller")
