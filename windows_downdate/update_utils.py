@@ -6,7 +6,7 @@ import win32api
 import win32security
 import win32service
 
-from windows_downdate.privilege_utils import enable_privilege
+from windows_downdate.privilege_utils import enable_privilege, is_trusted_installer
 from windows_downdate.registry_utils import set_reg_value, get_reg_values
 from windows_downdate.resource_utils import get_first_resource_language
 from windows_downdate.service_utils import set_service_start_type
@@ -93,11 +93,9 @@ def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
 def pend_update(pending_xml_path: str) -> None:
     set_trusted_installer_auto_start()
 
-    # Requires TrustedInstaller, can be skipped
-    register_winlogon_notification()
-
-    # Requires TrustedInstaller, can be skipped
-    set_servicing_in_progress()
+    if is_trusted_installer():
+        register_winlogon_notification()
+        set_servicing_in_progress()
 
     poqexec_path_exp = os.path.expandvars(POQEXEC_PATH)
     poqexec_cmd = f"{poqexec_path_exp} /display_progress {pending_xml_path}"
