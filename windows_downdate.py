@@ -106,16 +106,13 @@ def main() -> None:
     if not is_administrator():
         raise Exception("Windows-Downdate must be run as an Administrator")
 
+    update_files = parse_config_xml(args.config_xml)
+
     if args.elevate:
         impersonate_trusted_installer()
 
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
-
-    if not is_path_exists(args.config_xml):
-        raise FileNotFoundError("Config.xml file does not exist")
-
-    update_files = parse_config_xml(args.config_xml)
 
     if args.persistent:
         patched_poqexec_path_obj = Path(f"{cwd}\\resources\\PoqExec\\poqexec.exe")
