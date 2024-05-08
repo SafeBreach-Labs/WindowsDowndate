@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-import ntsecuritycon
 import pywintypes
 import win32api
 import win32con
@@ -9,7 +8,8 @@ import winerror
 
 from windows_downdate.process_utils import get_process_id_by_name
 from windows_downdate.service_utils import start_service
-from windows_downdate.wrappers.kernel32 import TokenInformationClass
+from windows_downdate.wrappers.advapi32 import check_token_membership
+from windows_downdate.wrappers.ntdll import rtl_create_service_sid
 
 
 def convert_privilege_name_to_luid(privilege: Tuple[str, int]) -> Tuple[int, int]:
@@ -70,19 +70,8 @@ def is_trusted_installer() -> bool:
             return False
         raise
 
-    group_info_list = win32security.GetTokenInformation(thread_token, TokenInformationClass.TokenGroups)
-    for group_info in group_info_list:
-        group_sid, group_flag = group_info
-
-        # TODO: Verify this logic, and other potential flags
-        if not group_flag & ntsecuritycon.SE_GROUP_ENABLED_BY_DEFAULT and not group_flag & ntsecuritycon.SE_GROUP_ENABLED:
-            continue
-
-        user_name, domain, _ = win32security.LookupAccountSid(None, group_sid)
-        if f"{user_name}\\{domain}".lower() == "TrustedInstaller\\NT SERVICE".lower():
-            return True
-
-    return False
+    trusted_installer_sid = rtl_create_service_sid("TrustedInstaller")
+    return check_token_membership(thread_token, trusted_installer_sid)
 
 
 def is_administrator() -> bool:
