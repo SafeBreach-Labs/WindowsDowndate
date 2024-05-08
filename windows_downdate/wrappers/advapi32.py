@@ -17,6 +17,32 @@ LOGON_WITH_PROFILE = 1
 LOGON_NETCREDENTIALS_ONLY = 2
 
 
+##############
+# Structures #
+##############
+
+
+class SID_IDENTIFIER_AUTHORITY(ctypes.Structure):
+    _fields_ = [
+        ('Value', wintypes.BYTE * 6),
+    ]
+
+
+PSID_IDENTIFIER_AUTHORITY = ctypes.POINTER(SID_IDENTIFIER_AUTHORITY)
+
+
+class SID(ctypes.Structure):
+    _fields_ = [
+        ('Revision', wintypes.BYTE),
+        ('SubAuthorityCount', wintypes.BYTE),
+        ('IdentifierAuthority', SID_IDENTIFIER_AUTHORITY),
+        ('SubAuthority', wintypes.DWORD * 16),
+    ]
+
+
+P_SID = ctypes.POINTER(SID)
+
+
 ########################
 # Function definitions #
 ########################
@@ -27,6 +53,12 @@ CreateProcessWithTokenW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LP
                                     wintypes.LPVOID, wintypes.LPWSTR, P_STARTUPINFOW, P_PROCESS_INFORMATION]
 CreateProcessWithTokenW.restype = wintypes.BOOL
 CreateProcessWithTokenW.errcheck = raise_if_false
+
+
+CheckTokenMembership = ctypes.windll.advapi32.CheckTokenMembership
+CheckTokenMembership.restype = wintypes.BOOL
+CheckTokenMembership.argtypes = [wintypes.HANDLE, P_SID, wintypes.PBOOL]
+CheckTokenMembership.errcheck = raise_if_false
 
 
 #####################
@@ -56,3 +88,11 @@ def create_process_with_token(token_handle: Union[int, pywintypes.HANDLE],
 
     CreateProcessWithTokenW(token_handle, logon_flags, application_name, command_line, creation_flags, environment,
                             current_directory, ctypes.byref(startup_info), ctypes.byref(process_info))
+
+
+def check_token_membership(token_handle: Union[int, pywintypes.HANDLE], sid: SID) -> bool:
+    token_handle = convert_pyhandle_to_handle(token_handle)
+
+    is_member = wintypes.BOOL()
+    CheckTokenMembership(token_handle, ctypes.byref(sid), ctypes.byref(is_member))
+    return bool(is_member.value)
