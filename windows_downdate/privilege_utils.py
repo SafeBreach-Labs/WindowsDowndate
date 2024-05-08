@@ -75,7 +75,7 @@ def is_trusted_installer() -> bool:
         group_sid, group_flag = group_info
 
         # TODO: Verify this logic, and other potential flags
-        if not group_flag & ntsecuritycon.SE_GROUP_ENABLED_BY_DEFAULT or not group_flag & ntsecuritycon.SE_GROUP_ENABLED:
+        if not group_flag & ntsecuritycon.SE_GROUP_ENABLED_BY_DEFAULT and not group_flag & ntsecuritycon.SE_GROUP_ENABLED:
             continue
 
         user_name, domain, _ = win32security.LookupAccountSid(None, group_sid)
