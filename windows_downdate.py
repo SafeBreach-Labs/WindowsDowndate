@@ -73,6 +73,9 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
         update_file_obj = UpdateFile(source_file_obj, destination_file_obj, should_retrieve_oldest)
         update_files.append(update_file_obj)
 
+    if not update_files:
+        raise Exception("Empty update files post config file parsing. Make sure to have a correct config file")
+
     return update_files
 
 
