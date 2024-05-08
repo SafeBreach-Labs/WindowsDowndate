@@ -83,3 +83,8 @@ def is_trusted_installer() -> bool:
             return True
 
     return False
+
+
+def is_administrator() -> bool:
+    administrator_sid = win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid)
+    return win32security.CheckTokenMembership(None, administrator_sid)
