@@ -7,7 +7,7 @@ from typing import List
 from windows_downdate import UpdateFile
 from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files
 from windows_downdate.filesystem_utils import is_path_exists, Path, is_file_contents_equal
-from windows_downdate.privilege_utils import impersonate_trusted_installer
+from windows_downdate.privilege_utils import impersonate_trusted_installer, is_administrator
 from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
@@ -102,6 +102,9 @@ def main() -> None:
     cwd = os.getcwd()
     init_logger()
     args = parse_args()
+
+    if not is_administrator():
+        raise Exception("Windows-Downdate must be run as an Administrator")
 
     if args.elevate:
         impersonate_trusted_installer()
