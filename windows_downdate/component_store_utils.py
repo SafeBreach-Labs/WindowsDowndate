@@ -1,17 +1,22 @@
 import os
 import shutil
 import time
+import winreg
 from typing import List
 
+import win32security
+
+from privilege_utils import enable_privilege
 from windows_downdate import UpdateFile
 from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exists, write_file, Path
 from windows_downdate.manifest_utils import Manifest
 from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 
-
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 
 COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
+
+COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
 
 
 def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
@@ -33,6 +38,15 @@ def get_components() -> List[Path]:
         raise Exception(f"Did not find component directories in component store")
 
     return components
+
+
+def load_components_hive() -> None:
+    # Make sure the required privileges for loading the hive are held
+    enable_privilege(win32security.SE_BACKUP_NAME)
+    enable_privilege(win32security.SE_RESTORE_NAME)
+
+    components_hive_path_exp = os.path.expandvars(COMPONENTS_HIVE_PATH)
+    winreg.LoadKey(winreg.HKEY_LOCAL_MACHINE, "COMPONENTS", components_hive_path_exp)
 
 
 # TODO: Update file related function, so should not reside here

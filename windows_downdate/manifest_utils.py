@@ -3,11 +3,25 @@ import re
 import xml.etree.ElementTree as ET
 from typing import List
 
+import win32api
+
 from windows_downdate.filesystem_utils import read_file
-from windows_downdate.update_utils import get_wcp_base_manifest
+from windows_downdate.update_utils import get_servicing_stack_path
+from windows_downdate.resource_utils import get_first_resource_language
 from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 from windows_downdate.xml_utils import load_xml_from_buffer, find_child_elements_by_match, get_element_attribute, \
     XmlElementAttributeNotFound
+
+
+RT_WCP_BASE_MANIFEST = 614
+RN_WCP_BASE_MANIFEST = 1
+
+
+def get_wcp_base_manifest() -> bytes:
+    servicing_stack_path = get_servicing_stack_path()
+    wcp_dll_path = f"{servicing_stack_path}\\wcp.dll"
+    wcp_module = win32api.LoadLibrary(wcp_dll_path)
+    return get_first_resource_language(wcp_module, RT_WCP_BASE_MANIFEST, RN_WCP_BASE_MANIFEST)
 
 
 class Manifest:
