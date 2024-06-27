@@ -4,9 +4,8 @@ import os
 import shutil
 import sys
 import time
-from typing import List
+from typing import List, Dict
 
-from windows_downdate import UpdateFile
 from windows_downdate.component_store_utils import get_components
 from windows_downdate.filesystem_utils import Path, is_file_contents_equal
 from windows_downdate.filesystem_utils import is_path_exists, read_file, write_file
@@ -20,6 +19,29 @@ from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, g
 
 
 logger = logging.getLogger(__name__)
+
+
+class UpdateFile:
+
+    def __init__(self, source_path: str, destination_path: str) -> None:
+        self.source_path_obj = Path(source_path)
+        self.destination_path_obj = Path(destination_path)
+        self.should_retrieve_oldest = False
+        self.is_oldest_retrieved = False
+
+        if not self.source_path_obj.exists:
+            self.should_retrieve_oldest = True
+
+        if not self.destination_path_obj.exists:
+            raise FileNotFoundError(f"The file to update {self.destination_path_obj.full_path} does not exist")
+
+    def validate(self):
+        if self.should_retrieve_oldest and not self.is_oldest_retrieved:
+            raise Exception("Oldest destination file retrieval failed. "
+                            f"Destination {self.destination_path_obj.name} may not be part of the component store")
+
+    def to_hardlink_dict(self) -> Dict[str, str]:
+        return {"source": self.source_path_obj.nt_path, "destination": self.destination_path_obj.nt_path}
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,18 +84,8 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     update_files = []
     for update_file in find_child_elements_by_match(config_xml, "./UpdateFilesList/UpdateFile"):
         destination_file = get_element_attribute(update_file, "destination")
-        destination_file_obj = Path(destination_file)
-
         source_file = get_element_attribute(update_file, "source")
-        source_file_obj = Path(source_file)
-
-        # If the source does not exist, retrieve its oldest version from the component store
-        if not source_file_obj.exists:
-            should_retrieve_oldest = True
-        else:
-            should_retrieve_oldest = False
-
-        update_file_obj = UpdateFile(source_file_obj, destination_file_obj, should_retrieve_oldest)
+        update_file_obj = UpdateFile(source_file, destination_file)
         update_files.append(update_file_obj)
 
     if not update_files:
@@ -143,7 +155,7 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
         hardlink_dict = update_file.to_hardlink_dict()
         hardlink_element = create_element("HardlinkFile", hardlink_dict)
         append_child_element(poq_element, hardlink_element)
-        logger.info(f"{update_file.destination_path_obj.full_path} <<-->> {update_file.source_path_obj.full_path}")
+        logger.info(f"\t\t{update_file.destination_path_obj.full_path} -> {update_file.source_path_obj.full_path}")
 
     return downgrade_xml
 
@@ -183,7 +195,6 @@ def main() -> None:
         logger.info("Added patched SFC to update files for irreversible")
 
     retrieve_oldest_files_for_update_files(update_files)
-    logger.info(f"Retrieved oldest files for non-existent update files")
 
     downgrade_xml = craft_downgrade_xml(update_files)
     downgrade_xml_path = f"{cwd}\\Downgrade.xml"
