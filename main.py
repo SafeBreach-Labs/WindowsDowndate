@@ -82,9 +82,9 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     return update_files
 
 
-def retrieve_oldest_file(component_path: str, file_name: str, oldest_file_path: str) -> None:
-    updated_file_path = f"{component_path}\\{file_name}"
-    reverse_diff_file_path = f"{component_path}\\r\\{file_name}"
+def retrieve_oldest_file_for_update_file(component: Path, update_file: UpdateFile) -> None:
+    updated_file_path = f"{component.full_path}\\{update_file.destination_path_obj.name}"
+    reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination_path_obj.name}"
 
     # If there is reverse diff, apply it to create the base file
     if is_path_exists(reverse_diff_file_path):
@@ -92,11 +92,14 @@ def retrieve_oldest_file(component_path: str, file_name: str, oldest_file_path: 
         reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
         base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
         base_content = base_delta_output_obj.get_buffer()
-        write_file(oldest_file_path, base_content)
+        write_file(update_file.source_path_obj.full_path, base_content)
 
     # If there is no reverse diff, the update file is the oldest file available
     else:
-        shutil.copyfile(updated_file_path, oldest_file_path)
+        shutil.copyfile(updated_file_path, update_file.source_path_obj.full_path)
+
+    update_file.is_oldest_retrieved = True
+    logger.info(f"Retrieved oldest destination file for {update_file.destination_path_obj.name}")
 
 
 def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
@@ -115,12 +118,7 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
             # Create the directory tree of the update file source
             os.makedirs(update_file.source_path_obj.parent_dir, exist_ok=True)
 
-            retrieve_oldest_file(component.full_path,
-                                 update_file.destination_path_obj.name,
-                                 update_file.source_path_obj.full_path)
-
-            update_file.is_oldest_retrieved = True
-            logger.info(f"Retrieved oldest destination file for {update_file.destination_path_obj.name}")
+            retrieve_oldest_file_for_update_file(component, update_file)
 
     for update_file in update_files:
         update_file.validate()
