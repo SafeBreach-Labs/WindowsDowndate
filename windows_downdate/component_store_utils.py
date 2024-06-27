@@ -8,11 +8,10 @@ from windows_downdate.filesystem_utils import read_file, list_dirs, is_path_exis
 from windows_downdate.manifest_utils import Manifest
 from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 
+
 COMPONENT_STORE_PATH = "%SystemRoot%\\WinSxS\\"
 
 COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
-
-# TODO: Better define the difference between this file and update_utils.py
 
 
 def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
