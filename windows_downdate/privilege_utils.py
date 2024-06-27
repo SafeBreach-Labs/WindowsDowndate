@@ -71,6 +71,7 @@ def is_trusted_installer() -> bool:
         raise
 
     trusted_installer_sid = rtl_create_service_sid("TrustedInstaller")
+    # Not using win32security.CheckTokenMembership because PySid is not properly documented
     return check_token_membership(thread_token, trusted_installer_sid)
 
 
