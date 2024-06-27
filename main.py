@@ -6,7 +6,7 @@ from typing import List
 
 from windows_downdate import UpdateFile
 from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files
-from windows_downdate.filesystem_utils import is_path_exists, Path, is_file_contents_equal
+from windows_downdate.filesystem_utils import Path, is_file_contents_equal
 from windows_downdate.privilege_utils import impersonate_trusted_installer, is_administrator
 from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
