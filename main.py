@@ -1,15 +1,20 @@
 import argparse
 import logging
 import os
+import shutil
 import sys
+import time
 from typing import List
 
 from windows_downdate import UpdateFile
-from windows_downdate.component_store_utils import retrieve_oldest_files_for_update_files
+from windows_downdate.component_store_utils import get_components
 from windows_downdate.filesystem_utils import Path, is_file_contents_equal
+from windows_downdate.filesystem_utils import is_path_exists, read_file, write_file
+from windows_downdate.manifest_utils import Manifest
 from windows_downdate.privilege_utils import impersonate_trusted_installer, is_administrator
 from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
+from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
     append_child_element, ET
 
@@ -75,6 +80,54 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
         raise Exception("Empty update files post config file parsing. Make sure to have a correct config file")
 
     return update_files
+
+
+def retrieve_oldest_file(component_path: str, file_name: str, oldest_file_path: str) -> None:
+    updated_file_path = f"{component_path}\\{file_name}"
+    reverse_diff_file_path = f"{component_path}\\r\\{file_name}"
+
+    # If there is reverse diff, apply it to create the base file
+    if is_path_exists(reverse_diff_file_path):
+        updated_file_content = read_file(updated_file_path)
+        reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
+        base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
+        base_content = base_delta_output_obj.get_buffer()
+        write_file(oldest_file_path, base_content)
+
+    # If there is no reverse diff, the update file is the oldest file available
+    else:
+        shutil.copyfile(updated_file_path, oldest_file_path)
+
+
+def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
+    logger.info(f"Starting oldest files retrieval... This may take some time")
+    start_time = time.time()
+
+    for component in get_components():
+        manifest = Manifest(component.name)
+        for update_file in update_files:
+            if not update_file.should_retrieve_oldest or update_file.is_oldest_retrieved:
+                continue
+
+            if not manifest.is_file_in_manifest_files(update_file.destination_path_obj.full_path):
+                continue
+
+            # Create the directory tree of the update file source
+            os.makedirs(update_file.source_path_obj.parent_dir, exist_ok=True)
+
+            retrieve_oldest_file(component.full_path,
+                                 update_file.destination_path_obj.name,
+                                 update_file.source_path_obj.full_path)
+
+            update_file.is_oldest_retrieved = True
+            logger.info(f"Retrieved oldest destination file for {update_file.destination_path_obj.name}")
+
+    for update_file in update_files:
+        update_file.validate()
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    logger.info(f"Finished oldest file retrieval. {elapsed_time} seconds taken")
 
 
 def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:

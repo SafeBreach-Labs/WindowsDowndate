@@ -85,7 +85,6 @@ class Manifest:
                     self._manifest_files.append(update_file_path)
                 except XmlElementAttributeNotFound:
                     # If there is no destinationPath or no Name to the file entry, skip entry
-                    print(f"What is in here? {manifest_xml}")  # TODO: Delete after verification
                     continue
 
         return self._manifest_files
