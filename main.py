@@ -204,7 +204,7 @@ def main() -> None:
 
     downgrade_xml = craft_downgrade_xml(update_files)
     downgrade_xml_path = f"{cwd}\\Downgrade.xml"
-    downgrade_xml.write(downgrade_xml_path)
+    downgrade_xml.write(downgrade_xml_path, xml_declaration=True, encoding="utf-8")
     logger.info(f"Written downgrade XML to disk: {downgrade_xml_path}")
 
     pend_update(downgrade_xml_path)
