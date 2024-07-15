@@ -148,7 +148,7 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
     logger.info(f"Finished oldest file retrieval. {elapsed_time} seconds taken")
 
 
-def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
+def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str) -> None:
     downgrade_xml = get_empty_pending_xml()
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 
@@ -161,7 +161,8 @@ def craft_downgrade_xml(update_files: List[UpdateFile]) -> ET.ElementTree:
         append_child_element(poq_element, hardlink_element)
         logger.info(f"{update_file.destination_path_obj.full_path} -> {update_file.source_path_obj.full_path}")
 
-    return downgrade_xml
+    downgrade_xml.write(downgrade_xml_path, xml_declaration=True, encoding="utf-8")
+    logger.info(f"Written downgrade XML to disk: {downgrade_xml_path}")
 
 
 def main() -> None:
@@ -202,10 +203,8 @@ def main() -> None:
 
     retrieve_oldest_files_for_update_files(update_files)
 
-    downgrade_xml = craft_downgrade_xml(update_files)
     downgrade_xml_path = f"{cwd}\\Downgrade.xml"
-    downgrade_xml.write(downgrade_xml_path, xml_declaration=True, encoding="utf-8")
-    logger.info(f"Written downgrade XML to disk: {downgrade_xml_path}")
+    craft_downgrade_xml(update_files, downgrade_xml_path)
 
     pend_update(downgrade_xml_path)
     logger.info("Pended update with downgrade XML")
