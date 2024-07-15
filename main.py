@@ -36,7 +36,7 @@ class UpdateFile:
         if not self.destination_path_obj.exists:
             raise FileNotFoundError(f"The file to update {self.destination_path_obj.full_path} does not exist")
 
-    def verify_no_errors_or_raise(self):
+    def verify_no_errors_or_raise(self) -> None:
         if self.should_retrieve_oldest and not self.is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
                             f"Destination {self.destination_path_obj.name} may not be part of the component store")
@@ -46,6 +46,33 @@ class UpdateFile:
 
     def to_hardlink_dict(self) -> Dict[str, str]:
         return {"source": self.source_path_obj.nt_path, "destination": self.destination_path_obj.nt_path}
+
+    def create_source_directory_tree(self) -> None:
+        os.makedirs(self.source_path_obj.parent_dir, exist_ok=True)
+
+    def retrieve_oldest_source_file_from_sxs(self, source_sxs_path: str) -> None:
+        self.create_source_directory_tree()
+
+        updated_file_path = f"{source_sxs_path}\\{self.destination_path_obj.name}"
+        reverse_diff_file_path = f"{source_sxs_path}\\r\\{self.destination_path_obj.name}"
+
+        # If there is reverse diff, apply it to create the base file
+        if is_path_exists(reverse_diff_file_path):
+            updated_file_content = read_file(updated_file_path)
+            reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
+            base_content = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
+            write_file(self.source_path_obj.full_path, base_content)
+
+        # If there is no reverse diff, the update file is the oldest file available
+        else:
+            shutil.copyfile(updated_file_path, self.source_path_obj.full_path)
+
+        self.is_oldest_retrieved = True
+        logger.info(f"Retrieved oldest destination file for {self.destination_path_obj.name}")
+
+        if self.is_src_and_dst_equal():
+            self.skip_update = True
+            logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
 
 
 def parse_args() -> argparse.Namespace:
@@ -98,27 +125,6 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     return update_files
 
 
-# TODO: This should be part of UpdateFile I think
-def retrieve_oldest_file_for_update_file(component: Path, update_file: UpdateFile) -> None:
-    updated_file_path = f"{component.full_path}\\{update_file.destination_path_obj.name}"
-    reverse_diff_file_path = f"{component.full_path}\\r\\{update_file.destination_path_obj.name}"
-
-    # If there is reverse diff, apply it to create the base file
-    if is_path_exists(reverse_diff_file_path):
-        updated_file_content = read_file(updated_file_path)
-        reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
-        base_delta_output_obj = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
-        base_content = base_delta_output_obj.get_buffer()
-        write_file(update_file.source_path_obj.full_path, base_content)
-
-    # If there is no reverse diff, the update file is the oldest file available
-    else:
-        shutil.copyfile(updated_file_path, update_file.source_path_obj.full_path)
-
-    update_file.is_oldest_retrieved = True
-    logger.info(f"Retrieved oldest destination file for {update_file.destination_path_obj.name}")
-
-
 def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
     logger.info(f"Starting oldest files retrieval... This may take some time")
     start_time = time.time()
@@ -129,19 +135,14 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
             if not update_file.should_retrieve_oldest or update_file.is_oldest_retrieved:
                 continue
 
+            # Make sure that the destination file is part of the iterated component
             if not manifest.is_file_in_manifest_files(update_file.destination_path_obj.full_path):
                 continue
 
-            # Create the directory tree of the update file source
-            os.makedirs(update_file.source_path_obj.parent_dir, exist_ok=True)
-
-            retrieve_oldest_file_for_update_file(component, update_file)
+            update_file.retrieve_oldest_source_file_from_sxs(component.full_path)
 
     for update_file in update_files:
         update_file.verify_no_errors_or_raise()
-        if update_file.is_src_and_dst_equal():
-            update_file.skip_update = True
-            logger.info(f"Will skip update of {update_file.destination_path_obj.name}, source and destination equal")
 
     end_time = time.time()
     elapsed_time = end_time - start_time

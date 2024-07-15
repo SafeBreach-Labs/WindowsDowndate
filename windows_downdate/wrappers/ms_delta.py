@@ -61,7 +61,7 @@ DeltaFree.errcheck = raise_if_false
 #####################
 
 
-def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) -> DELTA_OUTPUT:
+def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) -> bytes:
     source_delta_input = DELTA_INPUT()
     source_delta_input.lpStart = ctypes.create_string_buffer(source)
     source_delta_input.uSize = len(source)
@@ -76,4 +76,4 @@ def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) ->
 
     ApplyDeltaB(delta_file_flag, source_delta_input, delta_delta_input, ctypes.byref(target_delta_output))
 
-    return target_delta_output
+    return target_delta_output.get_buffer()

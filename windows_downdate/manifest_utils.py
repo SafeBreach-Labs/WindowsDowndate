@@ -98,8 +98,8 @@ class Manifest:
     def _decompress_manifest(self) -> bytes:
         manifest_buffer = self.get_manifest_buffer()
         manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
-        manifest_delta_output_obj = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
-        return manifest_delta_output_obj.get_buffer()
+        decompressed_manifest = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
+        return decompressed_manifest
 
     def _is_manifest_diff_type(self) -> bool:
         manifest_buffer = self.get_manifest_buffer()
