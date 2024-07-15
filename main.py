@@ -15,7 +15,7 @@ from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
 from windows_downdate.xml_utils import load_xml, find_child_elements_by_match, get_element_attribute, create_element, \
-    append_child_element, ET
+    append_child_element
 
 
 logger = logging.getLogger(__name__)
