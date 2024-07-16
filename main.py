@@ -7,7 +7,7 @@ import time
 from typing import List, Dict
 
 from windows_downdate.component_store_utils import get_components
-from windows_downdate.filesystem_utils import Path, is_file_contents_equal
+from windows_downdate.filesystem_utils import PathEx, is_file_contents_equal
 from windows_downdate.filesystem_utils import is_path_exists, read_file, write_file
 from windows_downdate.manifest_utils import Manifest
 from windows_downdate.privilege_utils import impersonate_trusted_installer, is_administrator
@@ -24,16 +24,16 @@ logger = logging.getLogger(__name__)
 class UpdateFile:
 
     def __init__(self, source_path: str, destination_path: str) -> None:
-        self.source_path_obj = Path(source_path)
-        self.destination_path_obj = Path(destination_path)
+        self.source_path_obj = PathEx(source_path)
+        self.destination_path_obj = PathEx(destination_path)
         self.should_retrieve_oldest = False
         self.is_oldest_retrieved = False
         self.skip_update = False
 
-        if not self.source_path_obj.exists:
+        if not self.source_path_obj.exists():
             self.should_retrieve_oldest = True
 
-        if not self.destination_path_obj.exists:
+        if not self.destination_path_obj.exists():
             raise FileNotFoundError(f"The file to update {self.destination_path_obj.full_path} does not exist")
 
     def verify_no_errors_or_raise(self) -> None:
@@ -48,7 +48,7 @@ class UpdateFile:
         return {"source": self.source_path_obj.nt_path, "destination": self.destination_path_obj.nt_path}
 
     def create_source_directory_tree(self) -> None:
-        os.makedirs(self.source_path_obj.parent_dir, exist_ok=True)
+        os.makedirs(self.source_path_obj.parent, exist_ok=True)
 
     def retrieve_oldest_source_file_from_sxs(self, source_sxs_path: str) -> None:
         self.create_source_directory_tree()

@@ -1,7 +1,7 @@
 import filecmp
 import os
 from typing import Union, List
-
+from pathlib import WindowsPath
 
 # TODO: Better define Path object integration with filesystem_utils.py APIs
 # TODO: Consider integrating some filesystem_utils.py APIs to the Path object (eg. Path.is_exists)
@@ -15,26 +15,32 @@ class FileNotFound(Exception):
     pass
 
 
-class Path:
+class PathEx(WindowsPath):
+    def __new__(cls, path, *args, **kwargs):
+        expanded_path = os.path.expandvars(path)
+        args = (expanded_path, ) + args
+        self = cls._from_parts(args)
+        return self
 
-    def __init__(self, full_path: str) -> None:
-        self.full_path = os.path.expandvars(full_path)
-        self.parent_dir = os.path.dirname(self.full_path)
-        self.name = os.path.basename(self.full_path)
-        self.nt_path = os.path.normpath(fr"\??\{self.full_path}")
-        self.exists = os.path.exists(self.full_path)
+    @property
+    def nt_path(self):
+        return f"\\??\\{self}"
+
+    @property
+    def full_path(self):
+        return self.resolve()
 
 
-def get_path_modification_time(path_obj: Path) -> float:
+def get_path_modification_time(path_obj: PathEx) -> float:
     return os.path.getmtime(path_obj.full_path)
 
 
-def list_dirs(dir_path: str, oldest_to_newest: bool = False) -> List[Path]:
+def list_dirs(dir_path: str, oldest_to_newest: bool = False) -> List[PathEx]:
     dirs = []
     dir_path_exp = os.path.expandvars(dir_path)
     for dir_entry in os.scandir(dir_path_exp):
         if dir_entry.is_dir():
-            path_obj = Path(dir_entry.path)
+            path_obj = PathEx(dir_entry.path)
             dirs.append(path_obj)
 
     if not dirs:
@@ -46,12 +52,12 @@ def list_dirs(dir_path: str, oldest_to_newest: bool = False) -> List[Path]:
     return dirs
 
 
-def list_files(dir_path: str) -> List[Path]:
+def list_files(dir_path: str) -> List[PathEx]:
     files = []
     dir_path_exp = os.path.expandvars(dir_path)
     for dir_entry in os.scandir(dir_path_exp):
         if dir_entry.is_file():
-            path_obj = Path(dir_entry.path)
+            path_obj = PathEx(dir_entry.path)
             files.append(path_obj)
 
     if not files:
@@ -68,7 +74,7 @@ def is_file_suits_extensions(file: str, extensions: Union[List[str], str]) -> bo
     return file_extension in extensions
 
     
-def list_files_by_extensions(dir_path: str, extensions: Union[List[str], str]) -> List[Path]:
+def list_files_by_extensions(dir_path: str, extensions: Union[List[str], str]) -> List[PathEx]:
     files = []
     for file in list_files(dir_path):
         if is_file_suits_extensions(file.name, extensions):
