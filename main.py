@@ -10,7 +10,7 @@ from windows_downdate.component_store_utils import get_components
 from windows_downdate.filesystem_utils import PathEx, is_file_contents_equal
 from windows_downdate.filesystem_utils import is_path_exists, read_file, write_file
 from windows_downdate.manifest_utils import Manifest
-from windows_downdate.privilege_utils import impersonate_trusted_installer, is_administrator
+from windows_downdate.privilege_utils import is_administrator
 from windows_downdate.system_utils import restart_system
 from windows_downdate.update_utils import pend_update, get_empty_pending_xml
 from windows_downdate.wrappers.ms_delta import apply_delta, DELTA_FLAG_NONE
@@ -183,10 +183,6 @@ def main() -> None:
     update_files = parse_config_xml(args.config_xml)
     logger.info("Parsed config file")
 
-    if args.elevate:
-        impersonate_trusted_installer()
-        logger.info("Impersonated TrustedInstaller")
-
     if args.invisible:
         raise NotImplementedError("Not implemented yet")
 
@@ -211,7 +207,7 @@ def main() -> None:
     downgrade_xml_path = f"{cwd}\\Downgrade.xml"
     craft_downgrade_xml(update_files, downgrade_xml_path)
 
-    pend_update(downgrade_xml_path)
+    pend_update(downgrade_xml_path, args.elevate)
     logger.info("Pended update with downgrade XML")
 
     if args.force_restart:

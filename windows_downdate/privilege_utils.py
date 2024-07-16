@@ -1,15 +1,56 @@
-from typing import List, Tuple
+import contextlib
+from typing import List, Tuple, Generator
 
 import pywintypes
 import win32api
 import win32con
 import win32security
-import winerror
 
 from windows_downdate.process_utils import get_process_id_by_name
-from windows_downdate.service_utils import start_service
-from windows_downdate.wrappers.advapi32 import check_token_membership
-from windows_downdate.wrappers.ntdll import rtl_create_service_sid
+
+
+@contextlib.contextmanager
+def smart_open_handle(open_func, *args, **kwargs) -> Generator[pywintypes.HANDLEType, None, None]:
+    handle = open_func(*args, **kwargs)
+    try:
+        yield handle
+    finally:
+        handle.close()
+
+
+@contextlib.contextmanager
+def smart_open_process(*args, **kwargs) -> Generator[pywintypes.HANDLEType, None, None]:
+    with smart_open_handle(win32api.OpenProcess, *args, **kwargs) as process_handle:
+        yield process_handle
+
+
+@contextlib.contextmanager
+def smart_open_process_token(*args, **kwargs) -> Generator[pywintypes.HANDLEType, None, None]:
+    with smart_open_handle(win32security.OpenProcessToken, *args, **kwargs) as process_token_handle:
+        yield process_token_handle
+
+
+@contextlib.contextmanager
+def smart_duplicate_token_ex(*args, **kwargs) -> Generator[pywintypes.HANDLEType, None, None]:
+    with smart_open_handle(win32security.DuplicateTokenEx, *args, **kwargs) as dup_process_token_handle:
+        yield dup_process_token_handle
+
+
+@contextlib.contextmanager
+def smart_process_impersonator(process_name: str) -> Generator[None, None, None]:
+    process_id = get_process_id_by_name(process_name)
+    with smart_open_process(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id) as process_handle:
+        with smart_open_process_token(process_handle, win32con.TOKEN_DUPLICATE) as process_token_handle:
+            with smart_duplicate_token_ex(process_token_handle,
+                                          win32security.SecurityImpersonation,
+                                          win32con.TOKEN_ALL_ACCESS,
+                                          win32security.TokenImpersonation,
+                                          win32security.SECURITY_ATTRIBUTES()) as dup_process_token_handle:
+                win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
+    try:
+        yield
+    finally:
+        win32security.RevertToSelf()
 
 
 def convert_privilege_name_to_luid(privilege: Tuple[str, int]) -> Tuple[int, int]:
@@ -29,50 +70,6 @@ def adjust_token_privileges(privileges: List[Tuple[str, int]], disable_all_privi
 def enable_privilege(privilege_name: str) -> None:
     privilege = [(privilege_name, win32security.SE_PRIVILEGE_ENABLED)]
     adjust_token_privileges(privilege)
-
-
-def impersonate_process_by_process_name(process_name: str) -> None:
-    """
-    TODO:
-        read more about ImpersonateLoggedOnUser, and how pywin32 implements it. It may fail sometimes without raising
-        The behavior encountered is that without SeImpersonate, calling ImpersonateLoggedOnUser wont fail
-        While the actual impersonation is not successful
-        If SeImpersonate is enabled, the impersonation is successful
-    """
-
-    process_id = get_process_id_by_name(process_name)
-    process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id)
-    process_token_handle = win32security.OpenProcessToken(process_handle, win32con.TOKEN_DUPLICATE)
-    dup_process_token_handle = win32security.DuplicateTokenEx(process_token_handle,
-                                                              win32security.SecurityImpersonation,
-                                                              win32con.TOKEN_ALL_ACCESS,
-                                                              win32security.TokenImpersonation,
-                                                              win32security.SECURITY_ATTRIBUTES())
-    win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
-
-
-def impersonate_nt_system() -> None:
-    impersonate_process_by_process_name("winlogon.exe")
-
-
-def impersonate_trusted_installer() -> None:
-    impersonate_nt_system()
-    enable_privilege(win32security.SE_IMPERSONATE_NAME)
-    start_service("TrustedInstaller")
-    impersonate_process_by_process_name("TrustedInstaller.exe")
-
-
-def is_trusted_installer() -> bool:
-    try:
-        thread_token = win32security.OpenThreadToken(win32api.GetCurrentThread(), win32security.TOKEN_QUERY, False)
-    except pywintypes.error as e:
-        if e.winerror == winerror.ERROR_NO_TOKEN:
-            return False
-        raise
-
-    trusted_installer_sid = rtl_create_service_sid("TrustedInstaller")
-    # Not using win32security.CheckTokenMembership because PySid is not properly documented
-    return check_token_membership(thread_token, trusted_installer_sid)
 
 
 def is_administrator() -> bool:
