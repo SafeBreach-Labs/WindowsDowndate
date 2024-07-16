@@ -158,6 +158,7 @@ def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str)
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 
     for update_file in update_files:
+        # todo: for custom files this will not skip
         if update_file.skip_update:
             continue
 
