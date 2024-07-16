@@ -52,7 +52,10 @@ class UpdateFile:
 
     def retrieve_oldest_source_file_from_sxs(self, source_sxs_path: str) -> None:
         self.create_source_directory_tree()
+        self.apply_reverse_diff_or_copy(source_sxs_path)
+        self.verify_source_and_destination_equality()
 
+    def apply_reverse_diff_or_copy(self, source_sxs_path: str) -> None:
         updated_file_path = f"{source_sxs_path}\\{self.destination_path_obj.name}"
         reverse_diff_file_path = f"{source_sxs_path}\\r\\{self.destination_path_obj.name}"
 
@@ -70,6 +73,7 @@ class UpdateFile:
         self.is_oldest_retrieved = True
         logger.info(f"Retrieved oldest destination file for {self.destination_path_obj.name}")
 
+    def verify_source_and_destination_equality(self) -> None:
         if self.is_src_and_dst_equal():
             self.skip_update = True
             logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
