@@ -14,14 +14,12 @@ COMPONENT_DIR_PREFIXES = ["amd64", "msil", "wow64", "x86"]
 COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
 
 
-# TODO: Fix this bug
-def is_component_dir(dir_name: str, case_sensitive: bool = False) -> bool:
+def is_component_dir(dir_name: str) -> bool:
     for prefix in COMPONENT_DIR_PREFIXES:
-        if not case_sensitive:
-            dir_name = dir_name.lower()
-            prefix = prefix.lower()
+        if dir_name.lower().startswith(prefix.lower()):
+            return True
 
-        return dir_name.startswith(prefix)
+    return False
 
 
 def get_components() -> List[PathEx]:
