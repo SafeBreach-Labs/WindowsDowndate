@@ -1,6 +1,6 @@
 import filecmp
 import os
-from typing import Union, List
+from typing import Union, List, Any, TypeVar, Type
 from pathlib import WindowsPath
 
 # TODO: Better define Path object integration with filesystem_utils.py APIs
@@ -16,19 +16,22 @@ class FileNotFound(Exception):
 
 
 class PathEx(WindowsPath):
-    def __new__(cls, path, *args, **kwargs):
+
+    TPathEx = TypeVar("TPathEx")
+
+    def __new__(cls: Type[TPathEx], path: str, *args: Any, **kwargs: Any) -> TPathEx:
         expanded_path = os.path.expandvars(path)
         args = (expanded_path, ) + args
         self = cls._from_parts(args)
         return self
 
     @property
-    def nt_path(self):
-        return f"\\??\\{self}"
+    def nt_path(self) -> str:
+        return f"\\??\\{str(self)}"
 
     @property
-    def full_path(self):
-        return self.resolve()
+    def full_path(self) -> str:
+        return str(self)
 
 
 def get_path_modification_time(path_obj: PathEx) -> float:
