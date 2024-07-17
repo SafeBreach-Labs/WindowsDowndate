@@ -2,14 +2,12 @@ import os
 import winreg
 from typing import Tuple
 
-import win32security
 import win32service
 
 from windows_downdate.component_store_utils import load_components_hive
-from windows_downdate.privilege_utils import enable_privilege, smart_process_impersonator
+from windows_downdate.privilege_utils import smart_trusted_installer_impersonator
 from windows_downdate.registry_utils import set_reg_value, get_reg_values
 from windows_downdate.service_utils import set_service_start_type
-from windows_downdate.service_utils import start_service
 from windows_downdate.winlogon_utils import set_winlogon_notification_event
 from windows_downdate.xml_utils import load_xml_from_buffer, ET
 
@@ -81,12 +79,9 @@ def pend_update(pending_xml_path: str, impersonate_ti: bool) -> None:
     set_trusted_installer_auto_start()
 
     if impersonate_ti:
-        enable_privilege(win32security.SE_IMPERSONATE_NAME)
-        with smart_process_impersonator("winlogon.exe"):
-            start_service("TrustedInstaller")
-            with smart_process_impersonator("TrustedInstaller.exe"):
-                register_winlogon_notification()
-                set_servicing_in_progress()
+        with smart_trusted_installer_impersonator():
+            register_winlogon_notification()
+            set_servicing_in_progress()
 
     poqexec_path_exp = os.path.expandvars(POQEXEC_PATH)
     poqexec_cmd = f"{poqexec_path_exp} /display_progress \\??\\{pending_xml_path}"

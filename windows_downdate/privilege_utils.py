@@ -7,6 +7,7 @@ import win32con
 import win32security
 
 from windows_downdate.process_utils import get_process_id_by_name
+from windows_downdate.service_utils import start_service
 
 
 @contextlib.contextmanager
@@ -36,9 +37,7 @@ def smart_duplicate_token_ex(*args, **kwargs) -> Generator[pywintypes.HANDLEType
         yield dup_process_token_handle
 
 
-@contextlib.contextmanager
-def smart_process_impersonator(process_name: str) -> Generator[None, None, None]:
-    process_id = get_process_id_by_name(process_name)
+def impersonate_process_by_id(process_id: int) -> None:
     with smart_open_process(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id) as process_handle:
         with smart_open_process_token(process_handle, win32con.TOKEN_DUPLICATE) as process_token_handle:
             with smart_duplicate_token_ex(process_token_handle,
@@ -47,6 +46,28 @@ def smart_process_impersonator(process_name: str) -> Generator[None, None, None]
                                           win32security.TokenImpersonation,
                                           win32security.SECURITY_ATTRIBUTES()) as dup_process_token_handle:
                 win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
+
+
+def impersonate_process_by_name(process_name: str) -> None:
+    process_id = get_process_id_by_name(process_name)
+    impersonate_process_by_id(process_id)
+
+
+def impersonate_trusted_installer() -> None:
+    start_service("TrustedInstaller")
+    impersonate_process_by_name("TrustedInstaller.exe")
+
+
+def impersonate_nt_system() -> None:
+    impersonate_process_by_name("winlogon.exe")
+
+
+@contextlib.contextmanager
+def smart_trusted_installer_impersonator() -> Generator[None, None, None]:
+    enable_privilege(win32security.SE_IMPERSONATE_NAME)
+    impersonate_nt_system()
+    impersonate_trusted_installer()
+
     try:
         yield
     finally:
