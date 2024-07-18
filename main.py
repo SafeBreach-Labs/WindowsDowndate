@@ -24,59 +24,81 @@ logger = logging.getLogger(__name__)
 class UpdateFile:
 
     def __init__(self, source_path: str, destination_path: str) -> None:
-        self.source_path_obj = PathEx(source_path)
-        self.destination_path_obj = PathEx(destination_path)
-        self.should_retrieve_oldest = False
-        self.is_oldest_retrieved = False
-        self.skip_update = False
+        self._source_path_obj = PathEx(source_path)
+        self._destination_path_obj = PathEx(destination_path)
+        self._should_retrieve_oldest = False
+        self._is_oldest_retrieved = False
+        self._skip_update = False
 
-        if not self.source_path_obj.exists():
-            self.should_retrieve_oldest = True
+        if not self._destination_path_obj.exists():
+            raise FileNotFoundError(f"The file to update {self._destination_path_obj.full_path} does not exist")
 
-        if not self.destination_path_obj.exists():
-            raise FileNotFoundError(f"The file to update {self.destination_path_obj.full_path} does not exist")
+        if not self._source_path_obj.exists():
+            self._should_retrieve_oldest = True
+        else:
+            self._verify_source_and_destination_equality()
 
     def verify_no_errors_or_raise(self) -> None:
-        if self.should_retrieve_oldest and not self.is_oldest_retrieved:
+        if self._should_retrieve_oldest and not self._is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
-                            f"Destination {self.destination_path_obj.name} may not be part of the component store")
+                            f"Destination {self._destination_path_obj.name} may not be part of the component store")
 
     def is_src_and_dst_equal(self) -> bool:
-        return is_file_contents_equal(self.source_path_obj.full_path, self.destination_path_obj.full_path)
+        return is_file_contents_equal(self._source_path_obj.full_path, self._destination_path_obj.full_path)
 
     def to_hardlink_dict(self) -> Dict[str, str]:
-        return {"source": self.source_path_obj.nt_path, "destination": self.destination_path_obj.nt_path}
-
-    def create_source_directory_tree(self) -> None:
-        os.makedirs(self.source_path_obj.parent, exist_ok=True)
+        return {"source": self._source_path_obj.nt_path, "destination": self._destination_path_obj.nt_path}
 
     def retrieve_oldest_source_file_from_sxs(self, source_sxs_path: str) -> None:
-        self.create_source_directory_tree()
-        self.apply_reverse_diff_or_copy(source_sxs_path)
-        self.verify_source_and_destination_equality()
+        self._create_source_directory_tree()
+        self._apply_reverse_diff_or_copy(source_sxs_path)
+        self._verify_source_and_destination_equality()
 
-    def apply_reverse_diff_or_copy(self, source_sxs_path: str) -> None:
-        updated_file_path = f"{source_sxs_path}\\{self.destination_path_obj.name}"
-        reverse_diff_file_path = f"{source_sxs_path}\\r\\{self.destination_path_obj.name}"
+    def _create_source_directory_tree(self) -> None:
+        os.makedirs(self._source_path_obj.parent, exist_ok=True)
+
+    def _apply_reverse_diff_or_copy(self, source_sxs_path: str) -> None:
+        updated_file_path = f"{source_sxs_path}\\{self._destination_path_obj.name}"
+        reverse_diff_file_path = f"{source_sxs_path}\\r\\{self._destination_path_obj.name}"
 
         # If there is reverse diff, apply it to create the base file
         if is_path_exists(reverse_diff_file_path):
             updated_file_content = read_file(updated_file_path)
             reverse_diff_file_content = read_file(reverse_diff_file_path)[4:]  # Remove CRC checksum
             base_content = apply_delta(DELTA_FLAG_NONE, updated_file_content, reverse_diff_file_content)
-            write_file(self.source_path_obj.full_path, base_content)
+            write_file(self._source_path_obj.full_path, base_content)
 
         # If there is no reverse diff, the update file is the oldest file available
         else:
-            shutil.copyfile(updated_file_path, self.source_path_obj.full_path)
+            shutil.copyfile(updated_file_path, self._source_path_obj.full_path)
 
-        self.is_oldest_retrieved = True
-        logger.info(f"Retrieved oldest destination file for {self.destination_path_obj.name}")
+        self._is_oldest_retrieved = True
+        logger.info(f"Retrieved oldest destination file for {self._destination_path_obj.name}")
 
-    def verify_source_and_destination_equality(self) -> None:
+    def _verify_source_and_destination_equality(self) -> None:
         if self.is_src_and_dst_equal():
-            self.skip_update = True
+            self._skip_update = True
             logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
+
+    @property
+    def source_path_obj(self):
+        return self._source_path_obj
+
+    @property
+    def destination_path_obj(self):
+        return self._destination_path_obj
+
+    @property
+    def should_retrieve_oldest(self):
+        return self._should_retrieve_oldest
+
+    @property
+    def is_oldest_retrieved(self):
+        return self._is_oldest_retrieved
+
+    @property
+    def skip_update(self):
+        return self._skip_update
 
 
 def parse_args() -> argparse.Namespace:
@@ -158,7 +180,6 @@ def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str)
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 
     for update_file in update_files:
-        # todo: for custom files this will not skip
         if update_file.skip_update:
             continue
 
