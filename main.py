@@ -7,8 +7,7 @@ import time
 from typing import List, Dict, Self
 
 from windows_downdate.component_store_utils import get_components
-from windows_downdate.filesystem_utils import PathEx, is_file_contents_equal
-from windows_downdate.filesystem_utils import is_path_exists, read_file, write_file
+from windows_downdate.filesystem_utils import PathEx, is_file_contents_equal, is_path_exists, read_file, write_file
 from windows_downdate.manifest_utils import Manifest
 from windows_downdate.privilege_utils import is_administrator
 from windows_downdate.system_utils import restart_system
