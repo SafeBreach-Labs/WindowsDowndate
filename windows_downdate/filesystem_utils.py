@@ -1,6 +1,6 @@
 import filecmp
 import os
-from typing import Union, List, Any, TypeVar, Type
+from typing import Union, List, Any, TypeVar, Type, Self
 from pathlib import WindowsPath
 
 # TODO: Better define Path object integration with filesystem_utils.py APIs
@@ -26,11 +26,11 @@ class PathEx(WindowsPath):
         return self
 
     @property
-    def nt_path(self) -> str:
+    def nt_path(self: Self) -> str:
         return f"\\??\\{str(self)}"
 
     @property
-    def full_path(self) -> str:
+    def full_path(self: Self) -> str:
         return str(self)
 
 

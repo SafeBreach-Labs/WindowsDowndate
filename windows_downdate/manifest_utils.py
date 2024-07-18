@@ -1,7 +1,7 @@
 import os
 import re
 import xml.etree.ElementTree as ET
-from typing import List
+from typing import List, Self, Match
 
 import win32api
 
@@ -52,27 +52,27 @@ class Manifest:
         "runtime.drivers": "%SystemRoot%\\System32\\Drivers"
     }
 
-    def __init__(self, manifest_name: str) -> None:
+    def __init__(self: Self, manifest_name: str) -> None:
         self._manifest_name = manifest_name
         self._manifest_path = f"{Manifest.COMPONENT_STORE_MANIFESTS_PATH}\\{manifest_name}.manifest"
         self._manifest_buffer = None
         self._manifest_xml = None
         self._manifest_files = None
 
-    def get_manifest_xml(self) -> ET.ElementTree:
+    def get_manifest_xml(self: Self) -> ET.ElementTree:
         if not self._manifest_xml:
             manifest_buffer = self.get_manifest_buffer()
             self._manifest_xml = load_xml_from_buffer(manifest_buffer)
         return self._manifest_xml
 
-    def get_manifest_buffer(self) -> bytes:
+    def get_manifest_buffer(self: Self) -> bytes:
         if not self._manifest_buffer:
             self._manifest_buffer = read_file(self._manifest_path)
             if self._is_manifest_diff_type():
                 self._manifest_buffer = self._decompress_manifest()
         return self._manifest_buffer
 
-    def get_manifest_files(self) -> List[str]:
+    def get_manifest_files(self: Self) -> List[str]:
         if not self._manifest_files:
             self._manifest_files = []
             manifest_xml = self.get_manifest_xml()
@@ -89,19 +89,19 @@ class Manifest:
 
         return self._manifest_files
 
-    def is_file_in_manifest_files(self, file_to_search: str) -> bool:
+    def is_file_in_manifest_files(self: Self, file_to_search: str) -> bool:
         for manifest_file in self.get_manifest_files():
             if manifest_file.lower() == file_to_search.lower():
                 return True
         return False
 
-    def _decompress_manifest(self) -> bytes:
+    def _decompress_manifest(self: Self) -> bytes:
         manifest_buffer = self.get_manifest_buffer()
         manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
         decompressed_manifest = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
         return decompressed_manifest
 
-    def _is_manifest_diff_type(self) -> bool:
+    def _is_manifest_diff_type(self: Self) -> bool:
         manifest_buffer = self.get_manifest_buffer()
         return manifest_buffer.startswith(Manifest.DCM_HEADER)
 
@@ -109,7 +109,7 @@ class Manifest:
     def expand_manifest_path_variables(str_to_expand: str) -> str:
         pattern = r'\$\(([^)]+)\)'
 
-        def replace(match):
+        def replace(match: Match):
             variable_name = match.group(1).lower()
             full_name = match.group(0)
             return Manifest.PACKAGE_VARIABLES.get(variable_name, full_name)  # If didn't find variable value, do nothing

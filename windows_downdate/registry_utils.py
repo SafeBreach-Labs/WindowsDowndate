@@ -29,7 +29,7 @@ def get_reg_value(hkey: int, reg_path: str, reg_name: str) -> str:
     return value
 
 
-def set_reg_value(hkey: int, reg_path: str, reg_name: str, reg_value: Union[str, int], reg_type: int):
+def set_reg_value(hkey: int, reg_path: str, reg_name: str, reg_value: Union[str, int], reg_type: int) -> None:
     with winreg.OpenKeyEx(hkey, reg_path, 0, winreg.KEY_SET_VALUE) as registry_key:
         winreg.SetValueEx(registry_key, reg_name, 0, reg_type, reg_value)
 

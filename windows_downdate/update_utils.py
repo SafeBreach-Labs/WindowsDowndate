@@ -54,7 +54,8 @@ def set_servicing_in_progress() -> None:
     set_reg_value(winreg.HKEY_LOCAL_MACHINE,
                   cbs_interface_registry_path,
                   "ServicingInProgress",
-                  1, winreg.REG_DWORD)
+                  1,
+                  winreg.REG_DWORD)
 
 
 def register_poqexec_cmd(poqexec_cmd: str) -> None:

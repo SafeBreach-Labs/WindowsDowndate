@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 import time
-from typing import List, Dict
+from typing import List, Dict, Self
 
 from windows_downdate.component_store_utils import get_components
 from windows_downdate.filesystem_utils import PathEx, is_file_contents_equal
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class UpdateFile:
 
-    def __init__(self, source_path: str, destination_path: str) -> None:
+    def __init__(self: Self, source_path: str, destination_path: str) -> None:
         self._source_path_obj = PathEx(source_path)
         self._destination_path_obj = PathEx(destination_path)
         self._should_retrieve_oldest = False
@@ -38,26 +38,26 @@ class UpdateFile:
         else:
             self._verify_source_and_destination_equality()
 
-    def verify_no_errors_or_raise(self) -> None:
+    def verify_no_errors_or_raise(self: Self) -> None:
         if self._should_retrieve_oldest and not self._is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
                             f"Destination {self._destination_path_obj.name} may not be part of the component store")
 
-    def is_src_and_dst_equal(self) -> bool:
+    def is_src_and_dst_equal(self: Self) -> bool:
         return is_file_contents_equal(self._source_path_obj.full_path, self._destination_path_obj.full_path)
 
-    def to_hardlink_dict(self) -> Dict[str, str]:
+    def to_hardlink_dict(self: Self) -> Dict[str, str]:
         return {"source": self._source_path_obj.nt_path, "destination": self._destination_path_obj.nt_path}
 
-    def retrieve_oldest_source_file_from_sxs(self, source_sxs_path: str) -> None:
+    def retrieve_oldest_source_file_from_sxs(self: Self, source_sxs_path: str) -> None:
         self._create_source_directory_tree()
         self._apply_reverse_diff_or_copy(source_sxs_path)
         self._verify_source_and_destination_equality()
 
-    def _create_source_directory_tree(self) -> None:
+    def _create_source_directory_tree(self: Self) -> None:
         os.makedirs(self._source_path_obj.parent, exist_ok=True)
 
-    def _apply_reverse_diff_or_copy(self, source_sxs_path: str) -> None:
+    def _apply_reverse_diff_or_copy(self: Self, source_sxs_path: str) -> None:
         updated_file_path = f"{source_sxs_path}\\{self._destination_path_obj.name}"
         reverse_diff_file_path = f"{source_sxs_path}\\r\\{self._destination_path_obj.name}"
 
@@ -75,29 +75,29 @@ class UpdateFile:
         self._is_oldest_retrieved = True
         logger.info(f"Retrieved oldest destination file for {self._destination_path_obj.name}")
 
-    def _verify_source_and_destination_equality(self) -> None:
+    def _verify_source_and_destination_equality(self: Self) -> None:
         if self.is_src_and_dst_equal():
             self._skip_update = True
             logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
 
     @property
-    def source_path_obj(self):
+    def source_path_obj(self: Self) -> PathEx:
         return self._source_path_obj
 
     @property
-    def destination_path_obj(self):
+    def destination_path_obj(self: Self) -> PathEx:
         return self._destination_path_obj
 
     @property
-    def should_retrieve_oldest(self):
+    def should_retrieve_oldest(self: Self) -> bool:
         return self._should_retrieve_oldest
 
     @property
-    def is_oldest_retrieved(self):
+    def is_oldest_retrieved(self: Self) -> bool:
         return self._is_oldest_retrieved
 
     @property
-    def skip_update(self):
+    def skip_update(self: Self) -> bool:
         return self._skip_update
 
 
