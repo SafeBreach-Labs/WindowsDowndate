@@ -26,10 +26,6 @@ def find_child_elements_by_match(element: ET.ElementTree, match: str) -> List[ET
     return element.findall(match)
 
 
-def find_first_child_element_by_match(element: ET.ElementTree, match: str) -> ET.Element:
-    return element.find(match)
-
-
 def get_element_attribute(element: ET.Element, attribute: str) -> str:
     attribute_value = element.get(attribute)
     if not attribute_value:

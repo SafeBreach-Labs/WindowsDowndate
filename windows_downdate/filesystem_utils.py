@@ -76,18 +76,6 @@ def is_file_suits_extensions(file: str, extensions: Union[List[str], str]) -> bo
     _, file_extension = os.path.splitext(file)
     return file_extension in extensions
 
-    
-def list_files_by_extensions(dir_path: str, extensions: Union[List[str], str]) -> List[PathEx]:
-    files = []
-    for file in list_files(dir_path):
-        if is_file_suits_extensions(file.name, extensions):
-            files.append(file)
-
-    if not files:
-        raise Exception(f"Did not find files with extensions {extensions} in directory: {dir_path}")
-
-    return files
-
 
 # TODO: Implement reading in chunks to avoid memory waste
 def read_file(file_path: str, mode: str = "rb") -> Union[bytes, str]:
@@ -112,11 +100,3 @@ def is_file_contents_equal(file_path_1: str, file_path_2: str) -> bool:
     file_path_2_exp = os.path.expandvars(file_path_2)
     return filecmp.cmp(file_path_1_exp, file_path_2_exp)
 
-
-def create_dir(dir_path: str, exist_ok: bool = False):
-    dir_path_exp = os.path.expandvars(dir_path)
-    try:
-        os.mkdir(dir_path_exp)
-    except FileExistsError:
-        if not exist_ok:
-            raise
