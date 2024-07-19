@@ -43,13 +43,11 @@ P_DELTA_OUTPUT = ctypes.POINTER(DELTA_OUTPUT)
 ########################
 
 
-# TODO: Move definition to wrapper (?)
 ApplyDeltaB = ctypes.windll.msdelta.ApplyDeltaB
 ApplyDeltaB.argstypes = [ctypes.c_int64, DELTA_INPUT, DELTA_INPUT, P_DELTA_OUTPUT]
 ApplyDeltaB.restype = wintypes.BOOL
 ApplyDeltaB.errcheck = raise_if_false
 
-# TODO: Add wrapper
 DeltaFree = ctypes.windll.msdelta.DeltaFree
 DeltaFree.argstypes = [P_BUFFER]
 DeltaFree.restype = wintypes.BOOL
