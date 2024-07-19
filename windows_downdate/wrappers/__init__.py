@@ -1,15 +1,7 @@
 import ctypes
-from ctypes import wintypes
 from typing import Callable, Tuple, Any
 
 import win32api
-
-#############
-# Constants #
-#############
-
-
-NULL_PTR = wintypes.LPVOID(0)
 
 
 ####################
