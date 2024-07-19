@@ -1,7 +1,6 @@
 import contextlib
-from typing import List, Tuple, Generator, Callable, Any
+from typing import List, Tuple, Generator
 
-import pywintypes
 import win32api
 import win32con
 import win32security
@@ -10,42 +9,15 @@ from windows_downdate.process_utils import get_process_id_by_name
 from windows_downdate.service_utils import start_service
 
 
-@contextlib.contextmanager
-def smart_open_handle(open_func: Callable[..., pywintypes.HANDLEType], *args: Any, **kwargs: Any) -> Generator[pywintypes.HANDLEType, None, None]:
-    handle = open_func(*args, **kwargs)
-    try:
-        yield handle
-    finally:
-        handle.close()
-
-
-@contextlib.contextmanager
-def smart_open_process(*args: Any, **kwargs: Any) -> Generator[pywintypes.HANDLEType, None, None]:
-    with smart_open_handle(win32api.OpenProcess, *args, **kwargs) as process_handle:
-        yield process_handle
-
-
-@contextlib.contextmanager
-def smart_open_process_token(*args: Any, **kwargs: Any) -> Generator[pywintypes.HANDLEType, None, None]:
-    with smart_open_handle(win32security.OpenProcessToken, *args, **kwargs) as process_token_handle:
-        yield process_token_handle
-
-
-@contextlib.contextmanager
-def smart_duplicate_token_ex(*args: Any, **kwargs: Any) -> Generator[pywintypes.HANDLEType, None, None]:
-    with smart_open_handle(win32security.DuplicateTokenEx, *args, **kwargs) as dup_process_token_handle:
-        yield dup_process_token_handle
-
-
 def impersonate_process_by_id(process_id: int) -> None:
-    with smart_open_process(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id) as process_handle:
-        with smart_open_process_token(process_handle, win32con.TOKEN_DUPLICATE) as process_token_handle:
-            with smart_duplicate_token_ex(process_token_handle,
-                                          win32security.SecurityImpersonation,
-                                          win32con.TOKEN_ALL_ACCESS,
-                                          win32security.TokenImpersonation,
-                                          win32security.SECURITY_ATTRIBUTES()) as dup_process_token_handle:
-                win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
+    process_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_LIMITED_INFORMATION, False, process_id)
+    process_token_handle = win32security.OpenProcessToken(process_handle, win32con.TOKEN_DUPLICATE)
+    dup_process_token_handle = win32security.DuplicateTokenEx(process_token_handle,
+                                                              win32security.SecurityImpersonation,
+                                                              win32con.TOKEN_ALL_ACCESS,
+                                                              win32security.TokenImpersonation,
+                                                              win32security.SECURITY_ATTRIBUTES())
+    win32security.ImpersonateLoggedOnUser(dup_process_token_handle)
 
 
 def impersonate_process_by_name(process_name: str) -> None:
