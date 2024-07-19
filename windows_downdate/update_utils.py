@@ -67,7 +67,6 @@ def register_poqexec_cmd(poqexec_cmd: str) -> None:
 
 
 def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
-    # TODO: Theres gotta be a better way, ctypes.create_unicode_string?
     pending_xml_identifier_unicode = b"\x00".join(bytes([byte]) for byte in pending_xml_identifier) + b"\x00"
     set_reg_value(winreg.HKEY_LOCAL_MACHINE,
                   "COMPONENTS",
