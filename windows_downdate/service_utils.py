@@ -27,7 +27,6 @@ class ServiceStatus:
     wait_hing: int
 
 
-# TODO: Consider using win32serviceutil.ChangeServiceConfig instead of win32service.ChangeServiceConfig
 def set_service_start_type(service_name: str, start_type: int) -> None:
     sc_manager_handle = win32service.OpenSCManager(None, None, win32service.SERVICE_CHANGE_CONFIG)
     service_handle = win32service.OpenService(sc_manager_handle, service_name, win32service.SERVICE_CHANGE_CONFIG)
