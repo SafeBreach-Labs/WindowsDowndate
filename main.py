@@ -42,7 +42,7 @@ class UpdateFile:
             raise Exception("Oldest destination file retrieval failed. "
                             f"Destination {self._destination_path_obj.name} may not be part of the component store")
 
-    def is_src_and_dst_equal(self: Self) -> bool:
+    def _is_src_and_dst_equal(self: Self) -> bool:
         return is_file_contents_equal(self._source_path_obj.full_path, self._destination_path_obj.full_path)
 
     def to_hardlink_dict(self: Self) -> Dict[str, str]:
@@ -75,7 +75,7 @@ class UpdateFile:
         logger.info(f"Retrieved oldest destination file for {self._destination_path_obj.name}")
 
     def _verify_source_and_destination_equality(self: Self) -> None:
-        if self.is_src_and_dst_equal():
+        if self._is_src_and_dst_equal():
             self._skip_update = True
             logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
 
