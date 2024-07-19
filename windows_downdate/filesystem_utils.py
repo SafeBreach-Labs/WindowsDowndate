@@ -3,9 +3,6 @@ import os
 from typing import Union, List, Any, TypeVar, Type, Self
 from pathlib import WindowsPath
 
-# TODO: Better define Path object integration with filesystem_utils.py APIs
-
-
 
 class DirectoryNotFound(Exception):
     pass
@@ -27,7 +24,7 @@ class PathEx(WindowsPath):
 
     @property
     def nt_path(self: Self) -> str:
-        return f"\\??\\{str(self)}"
+        return f"\\??\\{self.full_path}"
 
     @property
     def full_path(self: Self) -> str:
@@ -55,29 +52,6 @@ def list_dirs(dir_path: str, oldest_to_newest: bool = False) -> List[PathEx]:
     return dirs
 
 
-def list_files(dir_path: str) -> List[PathEx]:
-    files = []
-    dir_path_exp = os.path.expandvars(dir_path)
-    for dir_entry in os.scandir(dir_path_exp):
-        if dir_entry.is_file():
-            path_obj = PathEx(dir_entry.path)
-            files.append(path_obj)
-
-    if not files:
-        raise FileNotFound(f"Did not find files in directory: {dir_path_exp}")
-
-    return files
-
-
-def is_file_suits_extensions(file: str, extensions: Union[List[str], str]) -> bool:
-    if isinstance(extensions, str):
-        extensions = [extensions]
-
-    _, file_extension = os.path.splitext(file)
-    return file_extension in extensions
-
-
-# TODO: Implement reading in chunks to avoid memory waste
 def read_file(file_path: str, mode: str = "rb") -> Union[bytes, str]:
     file_path_exp = os.path.expandvars(file_path)
     with open(file_path_exp, mode) as f:
