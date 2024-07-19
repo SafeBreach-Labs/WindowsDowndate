@@ -4,7 +4,7 @@ from typing import Union, List, Any, TypeVar, Type, Self
 from pathlib import WindowsPath
 
 # TODO: Better define Path object integration with filesystem_utils.py APIs
-# TODO: Consider integrating some filesystem_utils.py APIs to the Path object (eg. Path.is_exists)
+
 
 
 class DirectoryNotFound(Exception):
