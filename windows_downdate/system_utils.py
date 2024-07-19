@@ -10,5 +10,4 @@ def initiate_system_shutdown(computer_name: str,
 
 
 def restart_system(timeout: int = 0) -> None:
-    # TODO: Test with localhost instead of 127.0.0.1 or empty string
     initiate_system_shutdown("127.0.0.1", timeout=timeout, force_close=1, reboot_after_shutdown=1)
