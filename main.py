@@ -193,6 +193,7 @@ def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str)
 
 def main() -> None:
     cwd = os.getcwd()
+    os.environ["CWD"] = cwd
     init_logger()
     args = parse_args()
 
