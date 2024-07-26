@@ -1,0 +1,7 @@
+<Configuration>
+    <UpdateFilesList>
+        <UpdateFile source="%CWD%\examples\Hyper-V-Hypervisor-Downgrade\UpdateFiles\hvax64.exe" destination="C:\Windows\System32\hvax64.exe" />
+        <UpdateFile source="%CWD%\examples\Hyper-V-Hypervisor-Downgrade\UpdateFiles\hvix64.exe" destination="C:\Windows\System32\hvix64.exe" />
+        <UpdateFile source="%CWD%\examples\Hyper-V-Hypervisor-Downgrade\UpdateFiles\hvloader.dll" destination="C:\Windows\System32\hvloader.dll" />
+    </UpdateFilesList>
+</Configuration>
