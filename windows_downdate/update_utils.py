@@ -49,15 +49,6 @@ def register_winlogon_notification() -> None:
     set_winlogon_notification_event("TrustedInstaller", "CreateSession")
 
 
-def set_servicing_in_progress() -> None:
-    cbs_interface_registry_path = f"{CBS_REGISTRY_PATH}\\Interface"
-    set_reg_value(winreg.HKEY_LOCAL_MACHINE,
-                  cbs_interface_registry_path,
-                  "ServicingInProgress",
-                  1,
-                  winreg.REG_DWORD)
-
-
 def register_poqexec_cmd(poqexec_cmd: str) -> None:
     set_reg_value(winreg.HKEY_LOCAL_MACHINE,
                   SIDE_BY_SIDE_CONFIGURATION_REGISTRY_PATH,
@@ -78,11 +69,6 @@ def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
 def pend_update(pending_xml_path: str, impersonate_ti: bool) -> None:
     set_trusted_installer_auto_start()
 
-    if impersonate_ti:
-        with smart_trusted_installer_impersonator():
-            register_winlogon_notification()
-            set_servicing_in_progress()
-
     poqexec_path_exp = os.path.expandvars(POQEXEC_PATH)
     poqexec_cmd = f"{poqexec_path_exp} /display_progress \\??\\{pending_xml_path}"
     register_poqexec_cmd(poqexec_cmd)
@@ -92,6 +78,10 @@ def pend_update(pending_xml_path: str, impersonate_ti: bool) -> None:
     # TODO: Load identifier in runtime
     pending_xml_identifier = b"916ae75edb30da0146730000dc1be027"
     set_pending_xml_identifier(pending_xml_identifier)
+
+    if impersonate_ti:
+        with smart_trusted_installer_impersonator():
+            register_winlogon_notification()
 
 
 def get_servicing_stack_info() -> Tuple[str, str, int]:
