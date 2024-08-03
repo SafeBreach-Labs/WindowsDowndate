@@ -15,6 +15,14 @@ COMPONENTS_HIVE_PATH = "%SystemRoot%\\System32\\Config\\COMPONENTS"
 
 
 def is_component_dir(dir_name: str) -> bool:
+    """
+    Checks if the given directory is a component by comparing against a known component directory prefixes
+    Prefixes are - amd64, msil, wow64, x86
+
+    :param dir_name: The directory name to check
+    :return: True if component directory, False otherwise
+    :note: Check is case-insensitive
+    """
     for prefix in COMPONENT_DIR_PREFIXES:
         if dir_name.lower().startswith(prefix.lower()):
             return True
@@ -23,6 +31,12 @@ def is_component_dir(dir_name: str) -> bool:
 
 
 def get_components() -> List[PathEx]:
+    """
+    Gets list of all components in the store from old to new
+
+    :return: List of initialized PathEx objects, each represents a component directory
+    :raises: Exception - if did not find component directories in the component store
+    """
     components = []
     for component_store_dir in list_dirs(COMPONENT_STORE_PATH, oldest_to_newest=True):
         if is_component_dir(component_store_dir.name):
@@ -35,6 +49,11 @@ def get_components() -> List[PathEx]:
 
 
 def load_components_hive() -> None:
+    """
+    Loads the COMPONENTS hive from %SystemRoot%\System32\Config\COMPONENTS
+
+    :return: None
+    """
     # Make sure the required privileges for loading the hive are held
     enable_privilege(win32security.SE_BACKUP_NAME)
     enable_privilege(win32security.SE_RESTORE_NAME)

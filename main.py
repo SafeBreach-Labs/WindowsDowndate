@@ -21,8 +21,21 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateFile:
+    """
+    Represents an update file
+    """
 
     def __init__(self: Self, source_path: str, destination_path: str) -> None:
+        """
+        Initializes instance fields
+
+        :param source_path: The path of the source file, will replace destination_path.
+                            If the path does not exist, it will be marked for retrieval from the component store
+        :param destination_path: The path of the destination file, will be replaced by source_path.
+                                 This path mush exist
+        :raises: Exception - if the destination file does not exist
+        :return: None
+        """
         self._source_path_obj = PathEx(source_path)
         self._destination_path_obj = PathEx(destination_path)
         self._should_retrieve_oldest = False
@@ -38,25 +51,60 @@ class UpdateFile:
             self._verify_source_and_destination_equality()
 
     def verify_no_errors_or_raise(self: Self) -> None:
+        """
+        Verify that oldest file retrieved if it should have been
+
+        :raises: Exception - if oldest destination file retrieval failed
+        :return: None
+        """
         if self._should_retrieve_oldest and not self._is_oldest_retrieved:
             raise Exception("Oldest destination file retrieval failed. "
                             f"Destination {self._destination_path_obj.name} may not be part of the component store")
 
     def _is_src_and_dst_equal(self: Self) -> bool:
+        """
+        Check if source and destination files equal
+
+        :return: True if files are equal, False otherwise
+        """
         return is_file_contents_equal(self._source_path_obj.full_path, self._destination_path_obj.full_path)
 
     def to_hardlink_dict(self: Self) -> Dict[str, str]:
+        """
+        Creates the HardlinkFile dict to be used in the Pending.xml action list
+
+        :return: Dict in the following format - source: source NT path, destination: destionation NT path
+        """
         return {"source": self._source_path_obj.nt_path, "destination": self._destination_path_obj.nt_path}
 
     def retrieve_oldest_source_file_from_sxs(self: Self, source_sxs_path: str) -> None:
+        """
+        Retrieves the oldest source file exists in the component store and writes it to the source path
+
+        :param source_sxs_path: The path to the source file store in the component store
+        :return: None
+        :note: This method assumes the source is a component store file
+        """
         self._create_source_directory_tree()
         self._apply_reverse_diff_or_copy(source_sxs_path)
         self._verify_source_and_destination_equality()
 
     def _create_source_directory_tree(self: Self) -> None:
+        """
+        Creates the source path if does not exist
+
+        :return: None
+        """
         os.makedirs(self._source_path_obj.parent, exist_ok=True)
 
     def _apply_reverse_diff_or_copy(self: Self, source_sxs_path: str) -> None:
+        """
+        If the store is diff type, applies the reverse diff to get the base file
+        Otherwise, if store is not diff type, the file in the store is the oldest file available
+
+        :param source_sxs_path: The path to the source file store in the component store
+        :return: None
+        """
         updated_file_path = f"{source_sxs_path}\\{self._destination_path_obj.name}"
         reverse_diff_file_path = f"{source_sxs_path}\\r\\{self._destination_path_obj.name}"
 
@@ -75,32 +123,57 @@ class UpdateFile:
         logger.info(f"Retrieved oldest destination file for {self._destination_path_obj.name}")
 
     def _verify_source_and_destination_equality(self: Self) -> None:
+        """
+        Verifies that source and destination are not equal. If equal, marks update file to be skipped
+
+        :return: None
+        """
         if self._is_src_and_dst_equal():
             self._skip_update = True
             logger.info(f"Will skip update of {self.destination_path_obj.name}, source and destination equal")
 
     @property
     def source_path_obj(self: Self) -> PathEx:
+        """
+        :return: The source's PathEx object
+        """
         return self._source_path_obj
 
     @property
     def destination_path_obj(self: Self) -> PathEx:
+        """
+        :return: The destination's PathEx object
+        """
         return self._destination_path_obj
 
     @property
     def should_retrieve_oldest(self: Self) -> bool:
+        """
+        :return: Boolean stating if oldest file retrival is needed
+        """
         return self._should_retrieve_oldest
 
     @property
     def is_oldest_retrieved(self: Self) -> bool:
+        """
+        :return: Boolean stating if oldest file was retrieved
+        """
         return self._is_oldest_retrieved
 
     @property
     def skip_update(self: Self) -> bool:
+        """
+        :return: Boolean stating if update should be skipped on this file
+        """
         return self._skip_update
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    Parses command line arguments passed to this program
+
+    :return: Parsed command line arguments as argparse.Namespace object
+    """
     parser = argparse.ArgumentParser(description="Windows-Downdate: Craft any customized Windows Update")
     parser.add_argument("--config-xml", type=str, required=True, help="Path to the Config.xml file.")
     parser.add_argument("--force-restart", action="store_true", required="--restart-timeout" in sys.argv,
@@ -126,6 +199,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def init_logger() -> None:
+    """
+    Initializes the logger and formats it
+
+    :return: None
+    """
     logger.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
     log_format = logging.Formatter('[%(levelname)s] %(message)s')
@@ -133,7 +211,16 @@ def init_logger() -> None:
     logger.addHandler(stream_handler)
 
 
+# TODO: Check environment variables support
 def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
+    """
+    Parses given config XML file to create a list of initialized UpdateFile objects
+
+    :param config_file_path: The path to the Config XML file. Does not support environment variables
+    :raises: Exception - if no UpdateFile instances could be created from the config XML file
+                         This will usually happen if the config XML format is incorrect
+    :return: List of initialized UpdateFile objects
+    """
 
     config_xml = load_xml(config_file_path)
 
@@ -151,6 +238,21 @@ def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
 
 
 def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> None:
+    """
+    Iterates over UpdateFile list and retrieves oldest files for specified UpdateFile's from the component store
+
+    The retrieval algorithm is as follows:
+        1. Iterate over each component in the component store, from old to new
+        2. Check if the update file's oldest file should be retrieved, continue otherwise
+        3. Check if update file is part of the iterated component, continue otherwise
+        4. Retrieve the oldest file from the store
+
+    :param update_files: List of initialized UpdateFile objects
+    :return: None
+    :note: There is no documented way to get all stores of given file.
+           The way I do it is by iterating over all components from old to new
+           Then I parse the store's manifest, and given the manifest I know which files are part of the store
+    """
     logger.info(f"Starting oldest files retrieval... This may take some time")
     start_time = time.time()
 
@@ -174,7 +276,16 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
     logger.info(f"Finished oldest file retrieval. {elapsed_time} seconds taken")
 
 
+# TODO: Check environment variables support
 def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str) -> None:
+    """
+    Crafts the downgrading Pending XML file using initialized UpdateFile object list
+
+    :param update_files: List of initialized UpdateFile objects
+    :param downgrade_xml_path: The path where the downgrading Pending XML is written to.
+                               Does not support environment variables
+    :return:
+    """
     downgrade_xml = get_empty_pending_xml()
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
 

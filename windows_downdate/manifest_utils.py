@@ -18,6 +18,12 @@ RN_WCP_BASE_MANIFEST = 1
 
 
 def get_wcp_base_manifest() -> bytes:
+    """
+    Gets the content of the base WCP manifest
+    This can and should be used for decoding diff type manifest files
+
+    :return: Content of the base WCP manifest as bytes
+    """
     servicing_stack_path = get_servicing_stack_path()
     wcp_dll_path = f"{servicing_stack_path}\\wcp.dll"
     wcp_module = win32api.LoadLibrary(wcp_dll_path)
@@ -25,7 +31,9 @@ def get_wcp_base_manifest() -> bytes:
 
 
 class Manifest:
-
+    """
+    Represents a manifest file, supports both diff and normal manifests
+    """
     BASE_MANIFEST = get_wcp_base_manifest()
 
     DCM_HEADER = b"DCM\x01"
@@ -53,6 +61,12 @@ class Manifest:
     }
 
     def __init__(self: Self, manifest_name: str) -> None:
+        """
+        Initializes instance fields
+
+        :param manifest_name: The name of the manifest in the component store. Only name, not path
+        :return: None
+        """
         self._manifest_name = manifest_name
         self._manifest_path = f"{Manifest.COMPONENT_STORE_MANIFESTS_PATH}\\{manifest_name}.manifest"
         self._manifest_buffer = None
@@ -60,12 +74,25 @@ class Manifest:
         self._manifest_files = None
 
     def get_manifest_xml(self: Self) -> ET.ElementTree:
+        """
+        Gets the manifest XML
+
+        :return: The manifest XML content as ET.ElementTree
+        :note: Once retrieved, can not be retrieved again. This is for performance purposes
+        """
         if not self._manifest_xml:
             manifest_buffer = self.get_manifest_buffer()
             self._manifest_xml = load_xml_from_buffer(manifest_buffer)
         return self._manifest_xml
 
     def get_manifest_buffer(self: Self) -> bytes:
+        """
+        Gets the manifest buffer
+        For diff type manifests - the method decompresses the manifest as well
+
+        :return: The manifest buffer as bytes
+        :note: Once retrieved, can not be retrieved again. This is for performance purposes
+        """
         if not self._manifest_buffer:
             self._manifest_buffer = read_file(self._manifest_path)
             if self._is_manifest_diff_type():
@@ -73,6 +100,13 @@ class Manifest:
         return self._manifest_buffer
 
     def get_manifest_files(self: Self) -> List[str]:
+        """
+        Get a list of all files present in the manifest
+
+        :return: The manifest files as list of strings
+        :note: Once retrieved, can not be retrieved again. This is for performance purposes
+        :note: Manifests have their own "package variables", these are expanded here with self implemented mechanism
+        """
         if not self._manifest_files:
             self._manifest_files = []
             manifest_xml = self.get_manifest_xml()
@@ -90,25 +124,51 @@ class Manifest:
         return self._manifest_files
 
     def is_file_in_manifest_files(self: Self, file_to_search: str) -> bool:
+        """
+        Checks if a specified file is part of the manifest
+
+        :param file_to_search: Full path of the file to search in the manifest
+        :return: True if file part of manifest, False otherwise
+        :note: Check is case-insensitive
+        """
         for manifest_file in self.get_manifest_files():
             if manifest_file.lower() == file_to_search.lower():
                 return True
         return False
 
     def _decompress_manifest(self: Self) -> bytes:
+        """
+        Decompresses manifest using MS Delta API
+
+        :return: Decompressed manifest as bytes
+        :note: Method assumes that the manifest is diff type, and does not validate it
+        """
         manifest_buffer = self.get_manifest_buffer()
         manifest_buffer_without_dcm = manifest_buffer[4:]  # Remove DCM header
         decompressed_manifest = apply_delta(DELTA_FLAG_NONE, Manifest.BASE_MANIFEST, manifest_buffer_without_dcm)
         return decompressed_manifest
 
     def _is_manifest_diff_type(self: Self) -> bool:
+        """
+        Checks if manifest is diff type
+
+        :return: True if manifest is diff type, False otherwise
+        """
         manifest_buffer = self.get_manifest_buffer()
         return manifest_buffer.startswith(Manifest.DCM_HEADER)
 
     @staticmethod
     def expand_manifest_path_variables(str_to_expand: str) -> str:
+        """
+        Expands the
+
+        :param str_to_expand: String to expand its package variables
+        :return: Expanded string
+        :note: For strings with unrecognized package variables, the method does nothing
+        """
         pattern = r'\$\(([^)]+)\)'
 
+        # TODO: Add docs
         def replace(match: Match):
             variable_name = match.group(1).lower()
             full_name = match.group(0)
