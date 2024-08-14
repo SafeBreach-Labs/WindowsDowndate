@@ -61,13 +61,13 @@ def impersonate_nt_system() -> None:
     impersonate_process_by_name("winlogon.exe")
 
 
-# TODO: Add return explanation
 @contextlib.contextmanager
 def smart_trusted_installer_impersonator() -> Generator[None, None, None]:
     """
     Smart Trusted Installer impersonator that calls RevertToSelf when goes out of scope
 
-    :return:
+    :yield: Control back to the caller within the impersonation context
+    :return: None
     """
     enable_privilege(win32security.SE_IMPERSONATE_NAME)
     impersonate_nt_system()
