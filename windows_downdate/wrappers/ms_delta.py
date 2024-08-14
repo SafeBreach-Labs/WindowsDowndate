@@ -14,6 +14,9 @@ P_BUFFER = ctypes.POINTER(ctypes.c_char)
 
 
 class DELTA_INPUT(ctypes.Structure):
+    """
+    Represents MS Delta's DELTA_INPUT structure
+    """
     _fields_ = [
         ("lpStart", P_BUFFER),
         ("uSize", ctypes.c_size_t),
@@ -22,15 +25,28 @@ class DELTA_INPUT(ctypes.Structure):
 
 
 class DELTA_OUTPUT(ctypes.Structure):
+    """
+    Represents MS Delta's DELTA_OUTPUT structure
+    """
     _fields_ = [
         ("lpStart", P_BUFFER),
         ("uSize", ctypes.c_size_t)
     ]
 
     def get_buffer(self) -> bytes:
+        """
+        Gets the buffer of the DELTA_OUTPUT
+
+        :return: DELTA_OUTPUT buffer as output
+        """
         return bytes(self.lpStart[:self.uSize])
 
     def __del__(self) -> None:
+        """
+        Frees the MS Delta structure
+
+        :return: None
+        """
         if self.lpStart:
             DeltaFree(self.lpStart)
 
@@ -60,6 +76,14 @@ DeltaFree.errcheck = raise_if_false
 
 
 def apply_delta(delta_file_flag: ctypes.c_int64, source: bytes, delta: bytes) -> bytes:
+    """
+    Applies delta via ApplyDeltaB
+
+    :param delta_file_flag: The delta flag file
+    :param source: Bytes of the source file
+    :param delta: Bytes of the delta file
+    :return: Bytes of the apply output
+    """
     source_delta_input = DELTA_INPUT()
     source_delta_input.lpStart = ctypes.create_string_buffer(source)
     source_delta_input.uSize = len(source)
