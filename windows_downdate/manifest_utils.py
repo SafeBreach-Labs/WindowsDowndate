@@ -168,8 +168,13 @@ class Manifest:
         """
         pattern = r'\$\(([^)]+)\)'
 
-        # TODO: Add docs
         def replace(match: Match):
+            """
+            Replaces a matched variable in the string with its corresponding value from Manifest.PACKAGE_VARIABLES
+
+            :param match: A regex match object containing the variable to replace
+            :return: The replacement string for the matched variable
+            """
             variable_name = match.group(1).lower()
             full_name = match.group(0)
             return Manifest.PACKAGE_VARIABLES.get(variable_name, full_name)  # If didn't find variable value, do nothing
