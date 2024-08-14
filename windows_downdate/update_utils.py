@@ -18,8 +18,10 @@ SIDE_BY_SIDE_CONFIGURATION_REGISTRY_PATH = "SOFTWARE\\Microsoft\\Windows\\Curren
 
 POQEXEC_PATH = "%SystemRoot%\\System32\\poqexec.exe"
 
-EMPTY_PENDING_XML = """<?xml version='1.0' encoding='utf-8'?>\n
-<PendingTransaction Version="3.1" WcpVersion="10.0.22621.2567 (WinBuild.160101.0800)" Identifier="916ae75edb30da0146730000dc1be027">
+PENDING_XML_IDENTIFIER = "916ae75edb30da0146730000dc1be027"
+
+EMPTY_PENDING_XML = f"""<?xml version='1.0' encoding='utf-8'?>\n
+<PendingTransaction Version="3.1" WcpVersion="10.0.22621.2567 (WinBuild.160101.0800)" Identifier="{PENDING_XML_IDENTIFIER}">
 \t<Transactions>
 \t</Transactions>
 \t<ChangeList>
@@ -81,7 +83,7 @@ def register_poqexec_cmd(poqexec_cmd: str) -> None:
                   winreg.REG_MULTI_SZ)
 
 
-def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
+def set_pending_xml_identifier(pending_xml_identifier: str) -> None:
     """
     Sets the Pendning.xml identifier in registry
 
@@ -90,7 +92,8 @@ def set_pending_xml_identifier(pending_xml_identifier: bytes) -> None:
     :note: This API assumes the COMPONENTS hive is loaded to the registry
     :note: If this identifier is not equal to the Pending.xml identifier, PoqExec.exe will fail parsing Pending.xml
     """
-    pending_xml_identifier_unicode = b"\x00".join(bytes([byte]) for byte in pending_xml_identifier) + b"\x00"
+    pending_xml_identifier_bytes = bytes(pending_xml_identifier, "utf-8")
+    pending_xml_identifier_unicode = b"\x00".join(bytes([byte]) for byte in pending_xml_identifier_bytes) + b"\x00"
     set_reg_value(winreg.HKEY_LOCAL_MACHINE,
                   "COMPONENTS",
                   "PendingXmlIdentifier",
@@ -114,9 +117,7 @@ def pend_update(pending_xml_path: str, impersonate_ti: bool) -> None:
 
     load_components_hive()
 
-    # TODO: Load identifier in runtime
-    pending_xml_identifier = b"916ae75edb30da0146730000dc1be027"
-    set_pending_xml_identifier(pending_xml_identifier)
+    set_pending_xml_identifier(PENDING_XML_IDENTIFIER)
 
     if impersonate_ti:
         with smart_trusted_installer_impersonator():
