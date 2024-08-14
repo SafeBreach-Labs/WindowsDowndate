@@ -11,8 +11,15 @@ class PathEx(WindowsPath):
 
     TPathEx = TypeVar("TPathEx")
 
-    # TODO: Add docs
     def __new__(cls: Type[TPathEx], path: str, *args: Any, **kwargs: Any) -> TPathEx:
+        """
+        Create a new instance of PathEx, expanding environment variables in the provided path
+
+        :param path: The initial path
+        :param args: Additional positional arguments
+        :param kwargs: Additional keyword arguments
+        :return: A new instance of PathEx
+        """
         expanded_path = os.path.expandvars(path)
         args = (expanded_path, ) + args
         self = cls._from_parts(args)
