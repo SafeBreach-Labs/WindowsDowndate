@@ -202,12 +202,12 @@ def init_logger() -> None:
     logger.addHandler(stream_handler)
 
 
-# TODO: Check environment variables support
 def parse_config_xml(config_file_path: str) -> List[UpdateFile]:
     """
     Parses given config XML file to create a list of initialized UpdateFile objects
 
-    :param config_file_path: The path to the Config XML file. Does not support environment variables
+    :param config_file_path: The path to the Config XML file.
+                             Does not support environment variables
     :raises: Exception - if no UpdateFile instances could be created from the config XML file
                          This will usually happen if the config XML format is incorrect
     :return: List of initialized UpdateFile objects
@@ -267,7 +267,6 @@ def retrieve_oldest_files_for_update_files(update_files: List[UpdateFile]) -> No
     logger.info(f"Finished oldest file retrieval. {elapsed_time} seconds taken")
 
 
-# TODO: Check environment variables support
 def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str) -> None:
     """
     Crafts the downgrading Pending XML file using initialized UpdateFile object list
@@ -275,7 +274,7 @@ def craft_downgrade_xml(update_files: List[UpdateFile], downgrade_xml_path: str)
     :param update_files: List of initialized UpdateFile objects
     :param downgrade_xml_path: The path where the downgrading Pending XML is written to.
                                Does not support environment variables
-    :return:
+    :return: None
     """
     downgrade_xml = get_empty_pending_xml()
     poq_element = find_child_elements_by_match(downgrade_xml, "./POQ")[0]  # Post reboot POQ is always at index 0
