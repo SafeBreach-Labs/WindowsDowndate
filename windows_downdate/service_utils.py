@@ -30,13 +30,17 @@ class ServiceStatus:
     wait_hing: int
 
 
-# TODO: Finalize docs
 def set_service_start_type(service_name: str, start_type: int) -> None:
     """
     Sets service start type given service name
 
     :param service_name: The name of the service to change its start type
     :param start_type: The start type to set. Can be one of the following -
+        SERVICE_AUTO_START
+        SERVICE_BOOT_START
+        SERVICE_DEMAND_START
+        SERVICE_DISABLED
+        SERVICE_SYSTEM_START
     :return: None
     """
     sc_manager_handle = win32service.OpenSCManager(None, None, win32service.SERVICE_CHANGE_CONFIG)
