@@ -174,7 +174,7 @@ def parse_args() -> argparse.Namespace:
 
     :return: Parsed command line arguments as argparse.Namespace object
     """
-    parser = argparse.ArgumentParser(description="Windows-Downdate: Craft any customized Windows Update")
+    parser = argparse.ArgumentParser(description="Windows-Downdate: Craft downgrading Windows Updates")
     parser.add_argument("--config-xml", type=str, required=True, help="Path to the Config.xml file.")
     parser.add_argument("--force-restart", action="store_true", required="--restart-timeout" in sys.argv,
                         help="Flag specifying whether to force an automatic machine restart. "
