@@ -62,13 +62,13 @@ To craft custom downgrade, you need to create a config XML file and just feed th
 ### 2. Downgrade Usage Examples
 Windows Downdate has built-in usage examples with ready config XML files and vulnerable modules. The supported usage examples are listed below.
 
-1. [**CVE-2021-27090 Secure Kernel Elevation of Privilege Patch Downgrade**](./examples/CVE-2021-27090-Secure-Kernel-EoP-Patch-Downgrade/README.md)
-2. [**CVE-2022-34709 Credential Guard Elevation of Privilege Patch Downgrade**](./examples/CVE-2022-34709-Credential-Guard-EoP-Patch-Downgrade/README.md)
-3. [**CVE-2023-21768 AFD Driver Elevation of Privilege Patch Downgrade**](./examples/CVE-2023-21768-AFD-Driver-EoP-Patch-Downgrade/README.md)
-4. [**Hyper-V Hypervisor Downgrade**](./examples/Hyper-V-Hypervisor-Downgrade/README.md)
-5. [**Kernel Suite Downgrade**](./examples/Kernel-Suite-Downgrade/README.md)
-6. [**PPLFault Patch Downgrade**](./examples/PPLFault-Patch-Downgrade/README.md)
-7. [**VBS UEFI Lock Bypass**](./examples/VBS-UEFI-Locks-Bypass/README.md)
+1. [**CVE-2021-27090 Secure Kernel Elevation of Privilege Patch Downgrade**](./examples/CVE-2021-27090-Secure-Kernel-EoP-Patch-Downgrade)
+2. [**CVE-2022-34709 Credential Guard Elevation of Privilege Patch Downgrade**](./examples/CVE-2022-34709-Credential-Guard-EoP-Patch-Downgrade)
+3. [**CVE-2023-21768 AFD Driver Elevation of Privilege Patch Downgrade**](./examples/CVE-2023-21768-AFD-Driver-EoP-Patch-Downgrade)
+4. [**Hyper-V Hypervisor Downgrade**](./examples/Hyper-V-Hypervisor-Downgrade)
+5. [**Kernel Suite Downgrade**](./examples/Kernel-Suite-Downgrade)
+6. [**PPLFault Patch Downgrade**](./examples/PPLFault-Patch-Downgrade)
+7. [**VBS UEFI Lock Bypass**](./examples/VBS-UEFI-Locks-Bypass)
 
 ## Further Research
 Do you have in mind any Windows components that may be vulnerable to downgrades? Use Windows Downdate for further research and to find additional vulnerabilities!
