@@ -1,6 +1,6 @@
 # Windows Downdate
 <div align="center">
-<img src="./images/Windows-Downdate-Logo.png" width="25%"/>
+<img src="./images/Windows-Downdate-Logo.png" width="15%"/>
 </div align="center">
 
 ## Overview
