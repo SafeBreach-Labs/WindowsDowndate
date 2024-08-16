@@ -1,0 +1,6 @@
+[submodule "examples/PPLFault-Patch-Downgrade/PPLFault"]
+	path = examples/PPLFault-Patch-Downgrade/PPLFault
+	url = https://github.com/gabriellandau/PPLFault.git
+[submodule "examples/CVE-2023-21768-AFD-Driver-EoP-Patch-Downgrade/Windows_LPE_AFD_CVE-2023-21768"]
+	path = examples/CVE-2023-21768-AFD-Driver-EoP-Patch-Downgrade/Windows_LPE_AFD_CVE-2023-21768
+	url = https://github.com/chompie1337/Windows_LPE_AFD_CVE-2023-21768.git

