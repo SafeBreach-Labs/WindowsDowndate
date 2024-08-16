@@ -25,7 +25,7 @@ Windows Downdate also supports PyInstaller pre-compiled binary that you can down
 ## Usage
 Windows Downdate operates on a config XML file that specifies the files to downgrade
 ```
-WindowsDowndate.exe --config-xml <CONFIG XML PATH> <ADDITIONAL ARGS>
+windows_downdate.py --config-xml <CONFIG XML PATH> <ADDITIONAL ARGS>
 ```
 
 

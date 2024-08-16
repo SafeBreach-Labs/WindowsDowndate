@@ -6,7 +6,7 @@ This usage example invalidates the Secure Kernel powering VBS. This causes VBS t
 1. Make sure you are in the base repository directory
 2. Run the following command
     ```
-    WindowsDowndate.exe --config-xml examples/VBS-UEFI-Locks-Bypass/Config.xml
+    windows_downdate.py --config-xml examples/VBS-UEFI-Locks-Bypass/Config.xml
     ```
 
 ## Tested Versions

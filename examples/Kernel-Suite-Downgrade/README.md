@@ -6,7 +6,7 @@ This usage example downgrades the Windows Kernel, the NTFS driver and the Filter
 1. Make sure you are in the base repository directory
 2. Run the following command
     ```
-    WindowsDowndate.exe --config-xml examples/Kernel-Suite-Downgrade/Config.xml
+    windows_downdate.py --config-xml examples/Kernel-Suite-Downgrade/Config.xml
     ```
 
 ## Tested Versions

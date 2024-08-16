@@ -7,7 +7,7 @@ This usage example downgrades the patch of [PPLFault](https://www.blackhat.com/a
 1. Make sure you are in the base repository directory
 2. Run the following command
     ```
-    WindowsDowndate.exe --config-xml examples/PPLFault-Patch-Downgrade/Config.xml
+    windows_downdate.py --config-xml examples/PPLFault-Patch-Downgrade/Config.xml
     ```
 
 ## Tested Versions

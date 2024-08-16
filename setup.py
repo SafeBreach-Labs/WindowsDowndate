@@ -8,11 +8,11 @@ def get_requirements() -> List[str]:
 
 
 setup(
-    name="Windows-Downdate",
+    name="WindowsDowndate",
     version="1.0",
-    description="Windows-Downdate: Craft any customized Windows Update",
+    description="Windows Downdate: Craft any downgrading Windows Updates",
     author="Alon Leviev",
     python_requires=">=3.9.0",
-    url="https://github.com/SafeBreach-Labs/Windows-Downdate",
+    url="https://github.com/SafeBreach-Labs/WindowsDowndate",
     packages=find_packages(),
     install_requires=get_requirements())

@@ -6,7 +6,7 @@ This usage example downgrades the Hyper-V hypervisor to a two-year-old version.
 1. Make sure you are in the base repository directory
 2. Run the following command
     ```
-    WindowsDowndate.exe --config-xml examples/Hyper-V-Hypervisor-Downgrade/Config.xml
+    windows_downdate.py --config-xml examples/Hyper-V-Hypervisor-Downgrade/Config.xml
     ```
 
 ## Issued CVE-2024-21302
