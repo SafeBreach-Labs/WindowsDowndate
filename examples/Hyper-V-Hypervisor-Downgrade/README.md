@@ -3,8 +3,8 @@
 This usage example downgrades the Hyper-V hypervisor to a two-year-old version.
 
 ## Execution Steps
-1. Make sure you are in the base repository directory
-2. Run the following command
+1. Install Windows Downdate as instructed [**here**](../../README.md)
+2. Run the following command from the base repository directory
     ```
     windows_downdate.py --config-xml examples/Hyper-V-Hypervisor-Downgrade/Config.xml
     ```
