@@ -3,8 +3,8 @@
 This usage example invalidates the Secure Kernel powering VBS. This causes VBS to not load even if enforced with UEFI locks. Remote disablement of VBS should not be possible without physical access to the target machine.
 
 ## Execution Steps
-1. Make sure you are in the base repository directory
-2. Run the following command
+1. Install Windows Downdate as instructed [**here**](../../README.md)
+2. Run the following command from the base repository directory
     ```
     windows_downdate.py --config-xml examples/VBS-UEFI-Locks-Bypass/Config.xml
     ```
