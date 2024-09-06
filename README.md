@@ -8,13 +8,13 @@ A tool that takes over Windows Updates to craft custom downgrades and expose pas
 
 Using Windows Downdate you can downgrade critical OS components, DLLs, Drivers, the NT kernel, the Secure Kernel, the Hyper-V hypervisor, Credential Guard and much more!
 
-## Setup
+## Installation
 To install Windows Downdate, follow the steps below.
 1. Clone this repository
-2. Launch CMD and change directory to the cloned repository directory
-3. Run the following command
+2. Change directory to the cloned repository directory
+3. Run the following command (tested with python 3.11.9)
     ```
-    python311 setup.py install
+    pip install -r requirements.txt
     ```
 4. You can now execute Windows Downdate
 
