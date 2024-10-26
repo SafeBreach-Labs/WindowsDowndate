@@ -1,0 +1,7 @@
+<Configuration>
+    <UpdateFilesList>
+        <UpdateFile source="%CWD%\examples\ItsNotASecurityBoundary-Patch-Downgrade\UpdateFiles\invalid_securekernel.exe" destination="C:\Windows\System32\securekernel.exe" />
+        <UpdateFile source="%CWD%\examples\ItsNotASecurityBoundary-Patch-Downgrade\UpdateFiles\ci.dll" destination="C:\Windows\System32\ci.dll" />
+        <UpdateFile source="%CWD%\examples\ItsNotASecurityBoundary-Patch-Downgrade\UpdateFiles\ci.dll.mui" destination="C:\Windows\System32\en-US\ci.dll.mui" />
+    </UpdateFilesList>
+</Configuration>

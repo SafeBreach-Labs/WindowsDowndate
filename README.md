@@ -69,6 +69,7 @@ Windows Downdate has built-in usage examples with ready config XML files and vul
 5. [**Kernel Suite Downgrade**](./examples/Kernel-Suite-Downgrade)
 6. [**PPLFault Patch Downgrade**](./examples/PPLFault-Patch-Downgrade)
 7. [**VBS UEFI Lock Bypass**](./examples/VBS-UEFI-Locks-Bypass)
+8. [**ItsNotASecurityBoundary Patch Downgrade**](./examples/ItsNotASecurityBoundary-Patch-Downgrade)
 
 ## Further Research
 Do you have in mind any Windows components that may be vulnerable to downgrades? Use Windows Downdate for further research and to find additional vulnerabilities!
