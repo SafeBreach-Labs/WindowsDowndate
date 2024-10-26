@@ -23,4 +23,4 @@ There are multiple pitfalls to this key -
 1. It is not documented, and the consequences of using it are unknown
 2. It is not added automatically when enabling UEFI lock for VBS, so VBS is by-default vulnerable
 
-
+**Update October 2024: The "Mandatory" setting was documented by Microsoft and can be found [here](https://learn.microsoft.com/en-us/windows/security/hardware-security/enable-virtualization-based-protection-of-code-integrity)**
